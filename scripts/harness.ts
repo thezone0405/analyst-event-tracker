@@ -3,7 +3,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 
-const MAX_RETRIES = 10;
+const MAX_RETRIES = 7;
 
 interface AgentConfig {
   role: string;
@@ -16,7 +16,7 @@ const AGENT_DEFINITIONS: Record<string, AgentConfig> = {
   coder: {
     role: "Coder Agent",
     systemPrompt:
-      "You are an automated code generator. Read the target Gherkin spec. Implement the React components in src/, Tailwind styling, and Vitest unit tests immediately. Adhere strictly to CLAUDE.md guidelines. Do not modify .feature files.",
+      "You are an automated code generator. Read the target Gherkin spec. Implement the React components in src/, Tailwind styling, and Vitest unit tests immediately. Adhere strictly to CLAUDE.md guidelines. Do not modify .feature files. Proactively log what you are currently working on and what tools/commands you are executing in the console.",
     allowedTools: [
       "Read",
       "Edit",
@@ -24,12 +24,12 @@ const AGENT_DEFINITIONS: Record<string, AgentConfig> = {
       "Bash(npx vitest:*)",
       "Bash(npx tsc:*)",
     ],
-    maxTurns: 25, // Increased to give more room for complex implementations
+    maxTurns: 25,
   },
   cleaner: {
     role: "Cleaner Agent",
     systemPrompt:
-      "You are a refactoring specialist. Refactor React components and TypeScript logic to reduce cyclomatic complexity and lower CRAP scores below 15. Ensure all Vitest tests remain green.",
+      "You are a refactoring specialist. Refactor React components and TypeScript logic to reduce cyclomatic complexity and lower CRAP scores below 15. Ensure all Vitest tests remain green. Proactively log what files you are refactoring and what commands you are running.",
     allowedTools: [
       "Read",
       "Edit",
@@ -42,7 +42,7 @@ const AGENT_DEFINITIONS: Record<string, AgentConfig> = {
   hardener: {
     role: "Hardener Agent",
     systemPrompt:
-      "You are a mutation testing expert. Analyze Stryker mutation test reports, identify surviving mutants in React hooks or utility functions, and write boundary unit test assertions to kill them.",
+      "You are a mutation testing expert. Analyze Stryker mutation test reports, identify surviving mutants in React hooks or utility functions, and write boundary unit test assertions to kill them. Announce what test files you are modifying.",
     allowedTools: [
       "Read",
       "Edit",
@@ -104,7 +104,6 @@ function runCommand(command: string): {
   }
 }
 
-// Streams agent execution output live to the console for full visibility
 function runAgentCommand(command: string): number {
   const cleanEnv = { ...process.env };
   delete cleanEnv.CLAUDECODE;
@@ -133,13 +132,19 @@ function executeStageWithRetry(
   let lastErrorDetails = "";
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const startTime = new Date().toISOString();
+    console.log(`\n==================================================`);
     console.log(
-      `\n🤖 [Attempt ${attempt}/${MAX_RETRIES}] Spawning ${agent.role}...`,
+      `🤖 [${startTime}] Spawning ${agent.role} (Attempt ${attempt}/${MAX_RETRIES})`,
     );
+    console.log(`==================================================`);
 
     let fullPrompt = `${agent.systemPrompt}\nTarget Specification: ${specPath}`;
     if (attempt > 1 && lastErrorDetails) {
-      fullPrompt += `\n\n⚠️ PREVIOUS ATTEMPT FAILED verification gate "${gateName}".\nHere is the exact error output you must fix:\n\`\`\`\n${lastErrorDetails}\n\`\`\`\nReview this error, fix the implementation or tests, and try again.`;
+      console.log(
+        `\n🔍 [Feedback Loop] Feeding factual error report from previous attempt into ${agent.role}...`,
+      );
+      fullPrompt += `\n\n⚠️ PREVIOUS ATTEMPT FAILED verification gate "${gateName}".\nHere is the exact factual error output from the test runner that you must fix:\n\`\`\`\n${lastErrorDetails}\n\`\`\`\nAnalyze this factual error, inspect your code, apply fixes, and re-run verification.`;
     }
 
     const allowedToolsArgs = agent.allowedTools.map((t) => `"${t}"`).join(" ");
@@ -157,38 +162,62 @@ function executeStageWithRetry(
       agent.maxTurns.toString(),
     ].join(" ");
 
+    const agentStart = Date.now();
     const agentCode = runAgentCommand(cmd);
+    const agentDuration = ((Date.now() - agentStart) / 1000).toFixed(2);
+
     if (agentCode !== 0) {
       console.log(
-        `  ⚠️ ${agent.role} exited with code ${agentCode} on attempt ${attempt}.`,
+        `\n⚠️ [${new Date().toISOString()}] ${agent.role} finished with non-zero exit code ${agentCode} in ${agentDuration}s.`,
       );
-      lastErrorDetails = `Agent process exited with code ${agentCode} (possibly reached max turns or encountered a tool error).`;
+      lastErrorDetails = `Agent process exited with code ${agentCode} (reached max turns or encountered an unhandled tool exception).`;
       continue;
     }
 
+    console.log(
+      `\n✓ [${new Date().toISOString()}] ${agent.role} completed working session in ${agentDuration}s.`,
+    );
+
     if (preGateCommand) {
-      console.log(`  -> Running pre-gate step: ${preGateCommand}`);
+      console.log(`\n--------------------------------------------------`);
+      console.log(`⚙️ Running pre-gate command: ${preGateCommand}`);
+      console.log(`--------------------------------------------------`);
+      const preStart = Date.now();
       const preRes = runCommand(preGateCommand);
+      const preDuration = ((Date.now() - preStart) / 1000).toFixed(2);
+
       if (preRes.code !== 0) {
         lastErrorDetails = preRes.stderr || preRes.stdout;
-        console.log(`  ❌ Pre-gate step failed on attempt ${attempt}.`);
+        console.error(`❌ Pre-gate failed in ${preDuration}s.`);
+        console.error(`Factual Error Output:\n${lastErrorDetails}`);
         continue;
       }
+      console.log(`✓ Pre-gate passed successfully in ${preDuration}s.`);
     }
 
-    console.log(`  -> Running verification gate: ${gateName} (${gateCommand})`);
+    console.log(`\n--------------------------------------------------`);
+    console.log(`🛡️ Running verification gate: ${gateName}`);
+    console.log(`Command: ${gateCommand}`);
+    console.log(`--------------------------------------------------`);
+
+    const gateStart = Date.now();
     const gateRes = runCommand(gateCommand);
+    const gateDuration = ((Date.now() - gateStart) / 1000).toFixed(2);
 
     if (gateRes.code === 0) {
-      console.log(`  ✓ ${gateName} passed successfully.`);
+      console.log(
+        `\n🎉 [${new Date().toISOString()}] Verification Gate "${gateName}" PASSED successfully in ${gateDuration}s.`,
+      );
       return true;
     }
 
     lastErrorDetails = gateRes.stderr || gateRes.stdout;
-    const errorOutput = lastErrorDetails.slice(-400);
-    console.log(
-      `  ❌ ${gateName} failed on attempt ${attempt}.\nError preview:\n${errorOutput}`,
+    console.error(
+      `\n❌ [${new Date().toISOString()}] Verification Gate "${gateName}" FAILED in ${gateDuration}s.`,
     );
+    console.error(`---------------- Factual Error Report ----------------`);
+    console.error(lastErrorDetails.trim());
+    console.error(`------------------------------------------------------`);
   }
 
   console.error(
@@ -214,7 +243,6 @@ function main() {
   console.log(`✓ Loading spec: ${path.basename(specPath)}`);
   const initialHash = computeFileHash(specPath);
 
-  // Lock human-authored spec baseline in Git
   runCommand(`git add "${specPath}"`);
   if (runCommand(`git diff --cached --quiet`).code !== 0) {
     runCommand(
@@ -228,7 +256,7 @@ function main() {
       `\n--- Starting Agent Gauntlet Pipeline (Max Retries: ${MAX_RETRIES}) ---`,
     );
 
-    // STAGE 1: CODER (Implementation + Vitest Unit Tests + Type Check)
+    // STAGE 1: CODER
     if (
       !executeStageWithRetry(
         "coder",
@@ -243,7 +271,7 @@ function main() {
       `git add . && git commit -m "feat(coder): implement feature and unit tests for ${path.basename(specPath)}"`,
     );
 
-    // STAGE 2: CLEANER (Complexity Refactoring + Istanbul Coverage + CRAP4TS)
+    // STAGE 2: CLEANER
     if (
       !executeStageWithRetry(
         "cleaner",
@@ -259,7 +287,7 @@ function main() {
       `git add . && git commit -m "refactor(clean): optimize complexity and reduce CRAP score"`,
     );
 
-    // STAGE 3: HARDENER (Stryker Mutation Testing with Vitest Runner)
+    // STAGE 3: HARDENER
     if (
       !executeStageWithRetry(
         "hardener",
@@ -274,7 +302,7 @@ function main() {
       `git add . && git commit -m "test(hardener): pass mutation score thresholds"`,
     );
 
-    // STAGE 4: QA (BDD Acceptance Tests)
+    // STAGE 4: QA
     if (
       !executeStageWithRetry(
         "qa",
@@ -289,7 +317,6 @@ function main() {
       `git add . && git commit -m "test(qa): pass BDD acceptance scenarios for ${path.basename(specPath)}"`,
     );
 
-    // FINAL BUILD VERIFICATION (Ensure Vercel static production bundle succeeds)
     console.log(`\n-> Running final Vite production build check...`);
     const buildRes = runCommand("npm run build");
     if (buildRes.code !== 0) {

@@ -54,17 +54,25 @@ function isBlankRow(row: string[]): boolean {
   return row.every((cell) => cell.trim() === '')
 }
 
+/** Consumes the character at `index`; returns how many extra characters were consumed. */
+function readChar(state: ParserState, text: string, index: number): number {
+  if (state.inQuotes) return readQuoted(state, text[index], text[index + 1])
+  readUnquoted(state, text[index])
+  return 0
+}
+
+/** Closes a final row that was not terminated by a newline. */
+function flushTrailingRow(state: ParserState): void {
+  if (state.field !== '' || state.row.length > 0) endRow(state)
+}
+
 /** RFC 4180-style CSV parser supporting quoted fields, escaped quotes and CRLF line endings. */
 export function parseCsv(text: string): string[][] {
   const state: ParserState = { rows: [], row: [], field: '', inQuotes: false }
   for (let i = 0; i < text.length; i++) {
-    if (state.inQuotes) {
-      i += readQuoted(state, text[i], text[i + 1])
-    } else {
-      readUnquoted(state, text[i])
-    }
+    i += readChar(state, text, i)
   }
-  if (state.field !== '' || state.row.length > 0) endRow(state)
+  flushTrailingRow(state)
   return state.rows.filter((row) => !isBlankRow(row))
 }
 

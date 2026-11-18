@@ -77,13 +77,16 @@ export function groupByEventId(
   registrations: readonly Registration[],
 ): Map<string, Registration[]> {
   const groups = new Map<string, Registration[]>()
-  for (const registration of registrations) {
-    if (!registration.eventId) continue
-    const group = groups.get(registration.eventId) ?? []
-    group.push(registration)
-    groups.set(registration.eventId, group)
-  }
+  for (const registration of registrations) addToGroup(groups, registration)
   return groups
+}
+
+function addToGroup(groups: Map<string, Registration[]>, registration: Registration): void {
+  const { eventId } = registration
+  if (!eventId) return
+  const group = groups.get(eventId) ?? []
+  group.push(registration)
+  groups.set(eventId, group)
 }
 
 /** Combines the master schedule with the live export into one summary per scheduled event. */
