@@ -40,7 +40,7 @@ const AGENT_DEFINITIONS: Record<string, AgentConfig> = {
       "Bash(npx vitest:*)",
       "Bash(npx crap4ts:*)",
     ],
-    maxTurns: 10,
+    maxTurns: 15,
   },
   hardener: {
     role: "Hardener Agent",
