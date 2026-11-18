@@ -2,7 +2,7 @@
   "permissions": {
     "defaultMode": "acceptEdits",
     "allow": [
-      "Bash(npx jest *)",
+      "Bash(npx vitest *)",
       "Bash(npx crap4ts *)",
       "Bash(npx stryker *)",
       "Bash(npx tsc *)"
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npx jest --silent || (echo '❌ Stop Blocked: Unit tests are failing. Fix failing tests before finishing your turn.' >&2 && exit 2)"
+            "command": "npm test --silent -- run || (echo '❌ Stop Blocked: Unit tests are failing. Fix failing tests before finishing your turn.' >&2 && exit 2)"
           }
         ]
       }
