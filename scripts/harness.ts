@@ -164,25 +164,99 @@ function runCommand(command: string): {
   }
 }
 
-function runAgentCommand(command: string): number {
-  const cleanEnv = {
+interface AgentRunResult {
+  code: number;
+  summary: string;
+  logPath: string;
+}
+
+/**
+ * Summarizes a `--output-format stream-json --verbose` transcript: prints each
+ * tool call as it appeared and returns the final result event's details.
+ */
+function summarizeAgentTranscript(stdout: string): string {
+  const lines: string[] = [];
+
+  for (const raw of stdout.split(/\r?\n/)) {
+    if (!raw.trim()) continue;
+
+    let event: {
+      type?: string;
+      subtype?: string;
+      result?: string;
+      num_turns?: number;
+      total_cost_usd?: number;
+      is_error?: boolean;
+      message?: { content?: Array<{ type: string; name?: string; input?: unknown }> };
+    };
+    try {
+      event = JSON.parse(raw);
+    } catch {
+      lines.push(raw); // Non-JSON output (e.g. CLI errors) is shown verbatim.
+      continue;
+    }
+
+    if (event.type === "assistant") {
+      for (const block of event.message?.content ?? []) {
+        if (block.type === "tool_use") {
+          lines.push(`  🔧 ${block.name} ${JSON.stringify(block.input).slice(0, 160)}`);
+        }
+      }
+    } else if (event.type === "result") {
+      lines.push(
+        `  ▶ result: ${event.subtype} | turns: ${event.num_turns} | cost: $${event.total_cost_usd?.toFixed(4) ?? "?"} | is_error: ${event.is_error}`,
+      );
+      if (event.result) lines.push(`\n${event.result}`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Runs a headless Claude Code agent. The prompt is piped through stdin rather
+ * than passed as a CLI argument: on Windows, cmd.exe rejects command lines over
+ * 8,191 characters, which made large prompts (e.g. the Cleaner's embedded CRAP
+ * baseline) fail instantly with "The command line is too long."
+ */
+function runAgentCommand(
+  command: string,
+  prompt: string,
+  logPath: string,
+): AgentRunResult {
+  const cleanEnv: NodeJS.ProcessEnv = {
     ...process.env,
     CLAUDE_NO_SESSION_CACHE: "1",
   };
   delete cleanEnv.CLAUDECODE;
 
-  try {
-    execSync(command, {
-      encoding: "utf8",
-      stdio: "inherit",
-      env: cleanEnv,
-    });
+  let code = 0;
+  let stdout = "";
+  let stderr = "";
 
-    return 0;
+  try {
+    stdout = execSync(command, {
+      encoding: "utf8",
+      input: prompt,
+      stdio: ["pipe", "pipe", "pipe"],
+      env: cleanEnv,
+      maxBuffer: 256 * 1024 * 1024,
+    });
   } catch (error: unknown) {
-    const err = error as { status?: number };
-    return err.status ?? 1;
+    const err = error as { status?: number; stdout?: string; stderr?: string; message?: string };
+    code = err.status ?? 1;
+    stdout = err.stdout ?? "";
+    stderr = err.stderr ?? err.message ?? "";
   }
+
+  fs.mkdirSync(path.dirname(logPath), { recursive: true });
+  fs.writeFileSync(logPath, `${stdout}\n--- STDERR ---\n${stderr}`);
+
+  const summary = [summarizeAgentTranscript(stdout), stderr.trim()]
+    .filter(Boolean)
+    .join("\n");
+
+  return { code, summary, logPath };
 }
 
 /**
@@ -293,11 +367,16 @@ function executeStageWithRetry(
       .map((tool) => `"${tool}"`)
       .join(" ");
 
+    // The prompt is sent via stdin (see runAgentCommand), not as an argument.
     const cmd = [
       "npx",
       "@anthropic-ai/claude-code",
       "-p",
-      JSON.stringify(fullPrompt),
+      "--model",
+      agent.model,
+      "--output-format",
+      "stream-json",
+      "--verbose",
       "--permission-mode",
       "dontAsk",
       "--allowedTools",
@@ -306,9 +385,18 @@ function executeStageWithRetry(
       agent.maxTurns.toString(),
     ].join(" ");
 
+    const logPath = path.resolve(
+      process.cwd(),
+      `reports/agents/${agentKey}-attempt-${attempt}.jsonl`,
+    );
+
     const agentStart = Date.now();
-    const agentCode = runAgentCommand(cmd);
+    const agentRun = runAgentCommand(cmd, fullPrompt, logPath);
+    const agentCode = agentRun.code;
     const agentDuration = ((Date.now() - agentStart) / 1000).toFixed(2);
+
+    console.log(`\n📝 ${agent.role} transcript (full log: ${agentRun.logPath}):`);
+    console.log(agentRun.summary || "  (no output)");
 
     const estimatedOutputTokens = agent.maxTurns * 150;
     console.log(
@@ -319,7 +407,7 @@ function executeStageWithRetry(
       console.log(
         `\n⚠️ [${new Date().toISOString()}] ${agent.role} finished with non-zero exit code ${agentCode}.`,
       );
-      lastErrorDetails = `Agent process exited with code ${agentCode} (reached max turns or unhandled exception).`;
+      lastErrorDetails = `Agent process exited with code ${agentCode} (reached max turns or unhandled exception).\n${agentRun.summary.slice(-4000)}`;
       continue;
     }
 
