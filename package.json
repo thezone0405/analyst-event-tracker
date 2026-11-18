@@ -12,7 +12,7 @@
     "test": "vitest",
     "test:unit": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:crap": "crap4ts --threshold 15",
+    "test:crap": "vitest run --coverage && crap4ts --threshold 7 --coverage coverage/coverage-final.json",
     "test:mutation": "stryker run",
     "test:bdd": "cucumber-js",
     "verify": "npm run typecheck && npm run lint && npm run test:unit && npm run build",
