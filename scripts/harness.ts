@@ -24,7 +24,7 @@ const AGENT_DEFINITIONS: Record<string, AgentConfig> = {
       "Bash(npx vitest:*)",
       "Bash(npx tsc:*)",
     ],
-    maxTurns: 15,
+    maxTurns: 25, // Increased to give more room for complex implementations
   },
   cleaner: {
     role: "Cleaner Agent",
@@ -104,6 +104,24 @@ function runCommand(command: string): {
   }
 }
 
+// Streams agent execution output live to the console for full visibility
+function runAgentCommand(command: string): number {
+  const cleanEnv = { ...process.env };
+  delete cleanEnv.CLAUDECODE;
+
+  try {
+    execSync(command, {
+      encoding: "utf8",
+      stdio: "inherit",
+      env: cleanEnv,
+    });
+    return 0;
+  } catch (error: unknown) {
+    const err = error as { status?: number };
+    return err.status ?? 1;
+  }
+}
+
 function executeStageWithRetry(
   agentKey: keyof typeof AGENT_DEFINITIONS,
   specPath: string,
@@ -138,13 +156,11 @@ function executeStageWithRetry(
       agent.maxTurns.toString(),
     ].join(" ");
 
-    const agentRes = runCommand(cmd);
-    if (agentRes.code !== 0) {
+    const agentCode = runAgentCommand(cmd);
+    if (agentCode !== 0) {
       console.log(
-        `  ⚠️ ${agent.role} exited with code ${agentRes.code} on attempt ${attempt}.`,
+        `  ⚠️ ${agent.role} exited with code ${agentCode} on attempt ${attempt}.`,
       );
-      if (agentRes.stderr) console.error(`  STDERR: ${agentRes.stderr.trim()}`);
-      if (agentRes.stdout) console.error(`  STDOUT: ${agentRes.stdout.trim()}`);
       continue;
     }
 
