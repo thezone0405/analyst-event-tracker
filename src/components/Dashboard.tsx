@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { prioritize, todayIso } from '../services/attention'
 import { reconcile } from '../services/reconcile'
 import type { EventRecord, Registration } from '../types'
 import { EventCard } from './EventCard'
@@ -6,15 +7,20 @@ import { EventCard } from './EventCard'
 export interface DashboardProps {
   events: EventRecord[]
   registrations: Registration[]
+  /** Reference date (YYYY-MM-DD); defaults to the current local date. */
+  today?: string
 }
 
 /** Reconciles live registrations against the master schedule and renders one card per event. */
-export function Dashboard({ events, registrations }: DashboardProps) {
+export function Dashboard({ events, registrations, today = todayIso() }: DashboardProps) {
   const [dedupeActive, setDedupeActive] = useState(true)
   const result = useMemo(
     () => reconcile(events, registrations, { deduplicate: dedupeActive }),
     [events, registrations, dedupeActive],
   )
+
+  const prioritized = useMemo(() => prioritize(result.summaries, today), [result.summaries, today])
+  const urgent = prioritized.filter((item) => item.attention.needsAttention)
 
   return (
     <div className="flex flex-col gap-6">
@@ -51,9 +57,27 @@ export function Dashboard({ events, registrations }: DashboardProps) {
         </label>
       </section>
 
+      {urgent.length > 0 && (
+        <section
+          aria-label="Action Required"
+          data-testid="action-required"
+          className="rounded-xl border border-red-200 bg-red-50 p-4 text-left"
+        >
+          <h2 className="text-base font-semibold text-red-900">Action Required</h2>
+          <ul className="mt-2 flex flex-col gap-1 text-sm text-red-800">
+            {urgent.map(({ summary, attention }) => (
+              <li key={summary.event.event_id} data-testid={`action-item-${summary.event.event_id}`}>
+                {summary.event.event_id} · {summary.event.name} — {attention.badge} ({attention.percent}%,{' '}
+                {attention.daysRemaining} days left)
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section aria-label="Events" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {result.summaries.map((summary) => (
-          <EventCard key={summary.event.event_id} summary={summary} />
+        {prioritized.map(({ summary, attention }) => (
+          <EventCard key={summary.event.event_id} summary={summary} attention={attention} />
         ))}
       </section>
     </div>

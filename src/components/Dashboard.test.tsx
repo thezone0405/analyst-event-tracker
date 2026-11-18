@@ -45,3 +45,17 @@ describe('Dashboard', () => {
     expect(screen.getAllByTestId('status-Accepted')[0]).toHaveTextContent('2')
   })
 })
+
+describe('Dashboard action required banner', () => {
+  it('lists urgent events and excludes completed ones', () => {
+    const evs = [
+      makeEvent({ event_id: 'E130', date: '2026-11-19', target_registrations: 25, current_registrations: 4 }),
+      makeEvent({ event_id: 'E114', date: '2026-11-10', target_registrations: 45, current_registrations: 42 }),
+    ]
+    render(<Dashboard events={evs} registrations={[]} today="2026-11-16" />)
+
+    expect(screen.getByTestId('action-item-E130')).toBeInTheDocument()
+    expect(screen.queryByTestId('action-item-E114')).not.toBeInTheDocument()
+    expect(screen.getByTestId('attention-badge-E114')).toHaveTextContent('Completed')
+  })
+})

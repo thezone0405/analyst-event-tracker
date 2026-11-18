@@ -1,3 +1,4 @@
+import type { AttentionBadge, AttentionResult } from '../services/attention'
 import type { EventSummary, SummarySource } from '../types'
 import { BREAKDOWN_UNAVAILABLE_TEXT, NO_DATA_TEXT } from './copy'
 import { ProgressBar } from './ProgressBar'
@@ -5,6 +6,15 @@ import { StatusBreakdown } from './StatusBreakdown'
 
 export interface EventCardProps {
   summary: EventSummary
+  attention?: AttentionResult
+}
+
+const ATTENTION_CLASSES: Record<AttentionBadge, string> = {
+  'Needs Attention (Urgent)': 'bg-red-100 text-red-800',
+  'Needs Attention (Behind)': 'bg-orange-100 text-orange-800',
+  'Target Met': 'bg-emerald-100 text-emerald-800',
+  'On Track': 'bg-sky-100 text-sky-800',
+  Completed: 'bg-slate-200 text-slate-700',
 }
 
 const SOURCE_BADGES: Record<SummarySource, { label: string; className: string }> = {
@@ -13,7 +23,7 @@ const SOURCE_BADGES: Record<SummarySource, { label: string; className: string }>
   none: { label: 'No data', className: 'bg-amber-100 text-amber-800' },
 }
 
-function StatusDetail({ summary }: EventCardProps) {
+function StatusDetail({ summary }: { summary: EventSummary }) {
   if (summary.breakdown) {
     return <StatusBreakdown counts={summary.breakdown} />
   }
@@ -46,7 +56,7 @@ function DuplicateNote({ count }: DuplicateNoteProps) {
 }
 
 /** Summary card for one scheduled event. */
-export function EventCard({ summary }: EventCardProps) {
+export function EventCard({ summary, attention }: EventCardProps) {
   const { event, source, confirmed, target, percent, duplicatesFiltered } = summary
   const badge = SOURCE_BADGES[source]
 
@@ -66,9 +76,19 @@ export function EventCard({ summary }: EventCardProps) {
             {event.city} · {event.date}
           </p>
         </div>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
-          {badge.label}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
+            {badge.label}
+          </span>
+          {attention && (
+            <span
+              data-testid={`attention-badge-${event.event_id}`}
+              className={`rounded-full px-2 py-0.5 text-xs font-semibold ${ATTENTION_CLASSES[attention.badge]}`}
+            >
+              {attention.badge}
+            </span>
+          )}
+        </div>
       </header>
 
       <ProgressBar
