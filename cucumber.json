@@ -1,6 +1,27 @@
 {
   "default": {
-    "import": ["tests/support/register-tsx.mjs", "tests/step-definitions/**/*.ts"],
-    "format": ["progress"]
+    "import": [
+      "tests/support/register-tsx.mjs",
+      "tests/support/world.ts",
+      "tests/support/hooks.ts",
+      "tests/step-definitions/**/*.ts"
+    ],
+    "format": [
+      "progress",
+      "html:reports/cucumber-report.html",
+      "json:reports/cucumber-report.json"
+    ],
+    "strict": true
+  },
+  "ci": {
+    "import": [
+      "tests/support/register-tsx.mjs",
+      "tests/support/world.ts",
+      "tests/support/hooks.ts",
+      "tests/step-definitions/**/*.ts"
+    ],
+    "format": ["summary", "json:reports/cucumber-report.json"],
+    "strict": true,
+    "retry": 1
   }
 }

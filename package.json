@@ -15,7 +15,9 @@
     "pretest:crap": "npm run test:coverage",
     "test:crap": "crap4ts --threshold 7 --coverage coverage/coverage-final.json --format json > reports/crap-report.json",
     "test:mutation": "stryker run",
-    "test:bdd": "cucumber-js",
+    "test:bdd": "cucumber-js specs/features",
+    "test:bdd:ci": "cucumber-js --profile ci specs/features",
+    "test:e2e:install": "playwright install chromium",
     "verify": "npm run typecheck && npm run lint && npm run test:unit && npm run build",
     "gauntlet": "tsx scripts/harness.ts"
   },
@@ -44,6 +46,7 @@
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^17.13.0",
     "jsdom": "^31.0.1",
+    "playwright": "^1.65.1",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.1",
