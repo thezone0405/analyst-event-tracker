@@ -32,7 +32,7 @@ const AGENT_DEFINITIONS: Record<string, AgentConfig> = {
     role: "Cleaner Agent",
     model: "sonnet",
     systemPrompt:
-      "You are a refactoring specialist. Refactor TypeScript logic to lower CRAP scores below 15 while keeping Vitest tests green.",
+      "You are a refactoring specialist. Refactor TypeScript logic to lower CRAP scores below 7 while keeping Vitest tests green.",
     allowedTools: [
       "Read",
       "Edit",
