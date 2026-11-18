@@ -5,7 +5,9 @@
       "Bash(npx vitest *)",
       "Bash(npx crap4ts *)",
       "Bash(npx stryker *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Read(coverage/**)",
+      "Read(reports/**)"
     ]
   },
   "hooks": {
