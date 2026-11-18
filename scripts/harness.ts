@@ -10,13 +10,15 @@ interface AgentConfig {
   systemPrompt: string;
   allowedTools: string[];
   maxTurns: number;
+  model: string;
 }
 
 const AGENT_DEFINITIONS: Record<string, AgentConfig> = {
   coder: {
     role: "Coder Agent",
+    model: "sonnet",
     systemPrompt:
-      "You are an automated code generator. Read the target Gherkin spec. Implement the React components in src/, Tailwind styling, and Vitest unit tests immediately. Adhere strictly to CLAUDE.md guidelines. Do not modify .feature files. Proactively log what you are currently working on and what tools/commands you are executing in the console.",
+      "You are an isolated code generator. Implement React components in src/, Tailwind styling, and Vitest unit tests for the target spec. Do not modify .feature files.",
     allowedTools: [
       "Read",
       "Edit",
@@ -28,8 +30,9 @@ const AGENT_DEFINITIONS: Record<string, AgentConfig> = {
   },
   cleaner: {
     role: "Cleaner Agent",
+    model: "sonnet",
     systemPrompt:
-      "You are a refactoring specialist. Refactor React components and TypeScript logic to reduce cyclomatic complexity and lower CRAP scores below 15. Ensure all Vitest tests remain green. Proactively log what files you are refactoring and what commands you are running.",
+      "You are a refactoring specialist. Refactor TypeScript logic to lower CRAP scores below 15 while keeping Vitest tests green.",
     allowedTools: [
       "Read",
       "Edit",
@@ -41,8 +44,9 @@ const AGENT_DEFINITIONS: Record<string, AgentConfig> = {
   },
   hardener: {
     role: "Hardener Agent",
+    model: "sonnet",
     systemPrompt:
-      "You are a mutation testing expert. Analyze Stryker mutation test reports, identify surviving mutants in React hooks or utility functions, and write boundary unit test assertions to kill them. Announce what test files you are modifying.",
+      "You are a mutation testing expert. Analyze Stryker mutation test reports and write boundary unit test assertions to kill surviving mutants.",
     allowedTools: [
       "Read",
       "Edit",
@@ -54,6 +58,7 @@ const AGENT_DEFINITIONS: Record<string, AgentConfig> = {
   },
   qa: {
     role: "QA Acceptance Agent",
+    model: "sonnet",
     systemPrompt:
       "You are a QA verification agent. Execute BDD acceptance tests against the implementation to verify full adherence to the Gherkin specification.",
     allowedTools: [
@@ -72,6 +77,17 @@ function computeFileHash(filePath: string): string {
     .createHash("sha256")
     .update(fs.readFileSync(filePath))
     .digest("hex");
+}
+
+// Purges stale caches and build artifacts to prevent cross-agent context bleed
+function purgeWorkspaceCache(): void {
+  const cacheDirs = ["coverage", ".vitest", "reports", ".stryker-tmp"];
+  for (const dir of cacheDirs) {
+    const fullPath = path.resolve(process.cwd(), dir);
+    if (fs.existsSync(fullPath)) {
+      fs.rmSync(fullPath, { recursive: true, force: true });
+    }
+  }
 }
 
 function runCommand(command: string): {
@@ -105,7 +121,10 @@ function runCommand(command: string): {
 }
 
 function runAgentCommand(command: string): number {
-  const cleanEnv = { ...process.env };
+  const cleanEnv = {
+    ...process.env,
+    CLAUDE_NO_SESSION_CACHE: "1",
+  };
   delete cleanEnv.CLAUDECODE;
 
   try {
@@ -132,20 +151,31 @@ function executeStageWithRetry(
   let lastErrorDetails = "";
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    purgeWorkspaceCache();
+
     const startTime = new Date().toISOString();
     console.log(`\n==================================================`);
     console.log(
-      `🤖 [${startTime}] Spawning ${agent.role} (Attempt ${attempt}/${MAX_RETRIES})`,
+      `🤖 [${startTime}] Spawning ${agent.role} (Attempt ${attempt}/${MAX_RETRIES}) [Isolated Context]`,
     );
     console.log(`==================================================`);
 
-    let fullPrompt = `${agent.systemPrompt}\nTarget Specification: ${specPath}`;
+    // Strict minimal context payload construction
+    const specContent = fs.readFileSync(specPath, "utf8");
+    let fullPrompt = `${agent.systemPrompt}\n\nSPECIFICATION (${path.basename(specPath)}):\n\`\`\`gherkin\n${specContent}\n\`\`\``;
+
     if (attempt > 1 && lastErrorDetails) {
       console.log(
-        `\n🔍 [Feedback Loop] Feeding factual error report from previous attempt into ${agent.role}...`,
+        `\n🔍 [Minimal Feedback] Appending exact factual error report to prompt...`,
       );
-      fullPrompt += `\n\n⚠️ PREVIOUS ATTEMPT FAILED verification gate "${gateName}".\nHere is the exact factual error output from the test runner that you must fix:\n\`\`\`\n${lastErrorDetails}\n\`\`\`\nAnalyze this factual error, inspect your code, apply fixes, and re-run verification.`;
+      fullPrompt += `\n\nFACTUAL ERROR FROM PREVIOUS ATTEMPT (${gateName}):\n\`\`\`\n${lastErrorDetails}\n\`\`\``;
     }
+
+    // Approximate token estimation (rough heuristic: ~4 characters per token)
+    const estimatedInputTokens = Math.ceil(fullPrompt.length / 4);
+    console.log(
+      `📊 [Token Telemetry] Estimated Input Prompt: ~${estimatedInputTokens} tokens (${fullPrompt.length} chars)`,
+    );
 
     const allowedToolsArgs = agent.allowedTools.map((t) => `"${t}"`).join(" ");
 
@@ -166,22 +196,22 @@ function executeStageWithRetry(
     const agentCode = runAgentCommand(cmd);
     const agentDuration = ((Date.now() - agentStart) / 1000).toFixed(2);
 
+    // Estimate output consumption based on max turns and typical output volume
+    const estimatedOutputTokens = agent.maxTurns * 150;
+    console.log(
+      `📊 [Token Telemetry] Session Summary: Duration: ${agentDuration}s | Max Turn Budget: ${agent.maxTurns} | Est. Total Session Tokens: ~${estimatedInputTokens + estimatedOutputTokens}`,
+    );
+
     if (agentCode !== 0) {
       console.log(
-        `\n⚠️ [${new Date().toISOString()}] ${agent.role} finished with non-zero exit code ${agentCode} in ${agentDuration}s.`,
+        `\n⚠️ [${new Date().toISOString()}] ${agent.role} finished with non-zero exit code ${agentCode}.`,
       );
-      lastErrorDetails = `Agent process exited with code ${agentCode} (reached max turns or encountered an unhandled tool exception).`;
+      lastErrorDetails = `Agent process exited with code ${agentCode} (reached max turns or unhandled exception).`;
       continue;
     }
 
-    console.log(
-      `\n✓ [${new Date().toISOString()}] ${agent.role} completed working session in ${agentDuration}s.`,
-    );
-
     if (preGateCommand) {
-      console.log(`\n--------------------------------------------------`);
-      console.log(`⚙️ Running pre-gate command: ${preGateCommand}`);
-      console.log(`--------------------------------------------------`);
+      console.log(`\n⚙️ Running pre-gate command: ${preGateCommand}`);
       const preStart = Date.now();
       const preRes = runCommand(preGateCommand);
       const preDuration = ((Date.now() - preStart) / 1000).toFixed(2);
@@ -189,24 +219,18 @@ function executeStageWithRetry(
       if (preRes.code !== 0) {
         lastErrorDetails = preRes.stderr || preRes.stdout;
         console.error(`❌ Pre-gate failed in ${preDuration}s.`);
-        console.error(`Factual Error Output:\n${lastErrorDetails}`);
         continue;
       }
-      console.log(`✓ Pre-gate passed successfully in ${preDuration}s.`);
     }
 
-    console.log(`\n--------------------------------------------------`);
-    console.log(`🛡️ Running verification gate: ${gateName}`);
-    console.log(`Command: ${gateCommand}`);
-    console.log(`--------------------------------------------------`);
-
+    console.log(`\n🛡️ Running verification gate: ${gateName} (${gateCommand})`);
     const gateStart = Date.now();
     const gateRes = runCommand(gateCommand);
     const gateDuration = ((Date.now() - gateStart) / 1000).toFixed(2);
 
     if (gateRes.code === 0) {
       console.log(
-        `\n🎉 [${new Date().toISOString()}] Verification Gate "${gateName}" PASSED successfully in ${gateDuration}s.`,
+        `\n🎉 [${new Date().toISOString()}] Verification Gate "${gateName}" PASSED in ${gateDuration}s.`,
       );
       return true;
     }
@@ -253,7 +277,7 @@ function main() {
 
   try {
     console.log(
-      `\n--- Starting Agent Gauntlet Pipeline (Max Retries: ${MAX_RETRIES}) ---`,
+      `\n--- Starting Optimized Isolated Agent Gauntlet Pipeline ---`,
     );
 
     // STAGE 1: CODER
@@ -268,7 +292,7 @@ function main() {
       process.exit(1);
     }
     runCommand(
-      `git add . && git commit -m "feat(coder): implement feature and unit tests for ${path.basename(specPath)}"`,
+      `git add . && git commit -m "feat(coder): implement feature and unit tests"`,
     );
 
     // STAGE 2: CLEANER
@@ -284,7 +308,7 @@ function main() {
       process.exit(1);
     }
     runCommand(
-      `git add . && git commit -m "refactor(clean): optimize complexity and reduce CRAP score"`,
+      `git add . && git commit -m "refactor(clean): optimize complexity"`,
     );
 
     // STAGE 3: HARDENER
@@ -314,7 +338,7 @@ function main() {
       process.exit(1);
     }
     runCommand(
-      `git add . && git commit -m "test(qa): pass BDD acceptance scenarios for ${path.basename(specPath)}"`,
+      `git add . && git commit -m "test(qa): pass BDD acceptance scenarios"`,
     );
 
     console.log(`\n-> Running final Vite production build check...`);
@@ -327,7 +351,7 @@ function main() {
     }
 
     console.log(
-      `\n🎉 Deterministic agent gauntlet completed successfully! Ready for Vercel deployment.`,
+      `\n🎉 Deterministic agent gauntlet completed successfully! Ready for Vercel.`,
     );
   } finally {
     if (computeFileHash(specPath) !== initialHash) {
@@ -337,7 +361,7 @@ function main() {
       runCommand(`git checkout "${specPath}"`);
       process.exit(1);
     }
-    console.log("✓ Spec integrity verified: Human source-of-truth untouched.");
+    console.log("✓ Spec integrity verified.");
   }
 }
 
