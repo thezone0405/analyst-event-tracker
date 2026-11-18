@@ -1,0 +1,6 @@
+{
+  "default": {
+    "import": ["tests/support/register-tsx.mjs", "tests/step-definitions/**/*.ts"],
+    "format": ["progress"]
+  }
+}
