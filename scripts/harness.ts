@@ -3,12 +3,12 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 7;
 
 interface AgentConfig {
   role: string;
   systemPrompt: string;
-  allowedTools: string;
+  allowedTools: string[];
   maxTurns: number;
 }
 
@@ -17,29 +17,52 @@ const AGENT_DEFINITIONS: Record<string, AgentConfig> = {
     role: "Coder Agent",
     systemPrompt:
       "You are an automated code generator. Read the target Gherkin spec. Implement the React components in src/, Tailwind styling, and Vitest unit tests immediately. Adhere strictly to CLAUDE.md guidelines. Do not modify .feature files.",
-    allowedTools: "Read,Edit,Write,Bash(npx vitest *),Bash(npx tsc *)",
+    allowedTools: [
+      "Read",
+      "Edit",
+      "Write",
+      "Bash(npx vitest:*)",
+      "Bash(npx tsc:*)",
+    ],
     maxTurns: 15,
   },
   cleaner: {
     role: "Cleaner Agent",
     systemPrompt:
       "You are a refactoring specialist. Refactor React components and TypeScript logic to reduce cyclomatic complexity and lower CRAP scores below 15. Ensure all Vitest tests remain green.",
-    allowedTools: "Read,Edit,Write,Bash(npx vitest *),Bash(npx crap4ts *)",
+    allowedTools: [
+      "Read",
+      "Edit",
+      "Write",
+      "Bash(npx vitest:*)",
+      "Bash(npx crap4ts:*)",
+    ],
     maxTurns: 10,
   },
   hardener: {
     role: "Hardener Agent",
     systemPrompt:
       "You are a mutation testing expert. Analyze Stryker mutation test reports, identify surviving mutants in React hooks or utility functions, and write boundary unit test assertions to kill them.",
-    allowedTools: "Read,Edit,Write,Bash(npx vitest *),Bash(npx stryker *)",
+    allowedTools: [
+      "Read",
+      "Edit",
+      "Write",
+      "Bash(npx vitest:*)",
+      "Bash(npx stryker:*)",
+    ],
     maxTurns: 12,
   },
   qa: {
     role: "QA Acceptance Agent",
     systemPrompt:
       "You are a QA verification agent. Execute BDD acceptance tests against the implementation to verify full adherence to the Gherkin specification.",
-    allowedTools:
-      "Read,Edit,Write,Bash(npx cucumber-js *),Bash(npx playwright *)",
+    allowedTools: [
+      "Read",
+      "Edit",
+      "Write",
+      "Bash(npx cucumber-js:*)",
+      "Bash(npx playwright:*)",
+    ],
     maxTurns: 8,
   },
 };
@@ -56,10 +79,14 @@ function runCommand(command: string): {
   stdout: string;
   stderr: string;
 } {
+  const cleanEnv = { ...process.env };
+  delete cleanEnv.CLAUDECODE;
+
   try {
     const stdout = execSync(command, {
       encoding: "utf8",
       stdio: ["pipe", "pipe", "pipe"],
+      env: cleanEnv,
     });
     return { code: 0, stdout, stderr: "" };
   } catch (error: unknown) {
@@ -96,14 +123,17 @@ function executeStageWithRetry(
         ? `${agent.systemPrompt}\nTarget Specification: ${specPath}`
         : `${agent.systemPrompt}\nTarget Specification: ${specPath}\n⚠️ PREVIOUS ATTEMPT FAILED verification gate "${gateName}". Review the failure, fix the implementation or tests, and try again.`;
 
+    const allowedToolsArgs = agent.allowedTools.map((t) => `"${t}"`).join(" ");
+
     const cmd = [
-      "claude",
+      "npx",
+      "@anthropic-ai/claude-code",
       "-p",
       JSON.stringify(fullPrompt),
       "--permission-mode",
-      "acceptEdits",
+      "dontAsk",
       "--allowedTools",
-      `"${agent.allowedTools}"`,
+      allowedToolsArgs,
       "--max-turns",
       agent.maxTurns.toString(),
     ].join(" ");
@@ -111,8 +141,10 @@ function executeStageWithRetry(
     const agentRes = runCommand(cmd);
     if (agentRes.code !== 0) {
       console.log(
-        `  ⚠️ ${agent.role} exited with non-zero code on attempt ${attempt}.`,
+        `  ⚠️ ${agent.role} exited with code ${agentRes.code} on attempt ${attempt}.`,
       );
+      if (agentRes.stderr) console.error(`  STDERR: ${agentRes.stderr.trim()}`);
+      if (agentRes.stdout) console.error(`  STDOUT: ${agentRes.stdout.trim()}`);
       continue;
     }
 
