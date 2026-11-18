@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1794996204921" clover="3.2.0">
+  <project timestamp="1794996204921" name="All files">
+    <metrics statements="157" coveredstatements="157" conditionals="94" coveredconditionals="89" methods="74" coveredmethods="73" elements="325" coveredelements="319" complexity="0" loc="157" ncloc="157" packages="6" files="17" classes="17"/>
+    <package name="public.data">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <file name="events.json" path="C:\Users\My PC\clutch-event-tracker\public\data\events.json">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+      <file name="registrations.csv" path="C:\Users\My PC\clutch-event-tracker\public\data\registrations.csv">
+        <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      </file>
+    </package>
+    <package name="src">
+      <metrics statements="9" coveredstatements="9" conditionals="0" coveredconditionals="0" methods="5" coveredmethods="5"/>
+      <file name="App.tsx" path="C:\Users\My PC\clutch-event-tracker\src\App.tsx">
+        <metrics statements="8" coveredstatements="8" conditionals="0" coveredconditionals="0" methods="5" coveredmethods="5"/>
+        <line num="15" count="1" type="stmt"/>
+        <line num="17" count="2" type="stmt"/>
+        <line num="22" count="1" type="stmt"/>
+        <line num="26" count="1" type="stmt"/>
+        <line num="34" count="4" type="stmt"/>
+        <line num="35" count="4" type="stmt"/>
+        <line num="39" count="4" type="stmt"/>
+        <line num="41" count="4" type="stmt"/>
+      </file>
+      <file name="types.ts" path="C:\Users\My PC\clutch-event-tracker\src\types.ts">
+        <metrics statements="1" coveredstatements="1" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="3" count="8" type="stmt"/>
+      </file>
+    </package>
+    <package name="src.components">
+      <metrics statements="24" coveredstatements="24" conditionals="12" coveredconditionals="10" methods="9" coveredmethods="9"/>
+      <file name="Dashboard.tsx" path="C:\Users\My PC\clutch-event-tracker\src\components\Dashboard.tsx">
+        <metrics statements="6" coveredstatements="6" conditionals="0" coveredconditionals="0" methods="4" coveredmethods="4"/>
+        <line num="13" count="4" type="stmt"/>
+        <line num="14" count="4" type="stmt"/>
+        <line num="15" count="4" type="stmt"/>
+        <line num="19" count="4" type="stmt"/>
+        <line num="48" count="1" type="stmt"/>
+        <line num="56" count="7" type="stmt"/>
+      </file>
+      <file name="EventCard.tsx" path="C:\Users\My PC\clutch-event-tracker\src\components\EventCard.tsx">
+        <metrics statements="9" coveredstatements="9" conditionals="8" coveredconditionals="7" methods="2" coveredmethods="2"/>
+        <line num="10" count="3" type="stmt"/>
+        <line num="17" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="18" count="4" type="stmt"/>
+        <line num="20" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="21" count="4" type="stmt"/>
+        <line num="23" count="2" type="stmt"/>
+        <line num="32" count="10" type="stmt"/>
+        <line num="33" count="10" type="stmt"/>
+        <line num="35" count="10" type="stmt"/>
+      </file>
+      <file name="ProgressBar.tsx" path="C:\Users\My PC\clutch-event-tracker\src\components\ProgressBar.tsx">
+        <metrics statements="4" coveredstatements="4" conditionals="4" coveredconditionals="3" methods="1" coveredmethods="1"/>
+        <line num="10" count="10" type="stmt"/>
+        <line num="11" count="10" type="stmt"/>
+        <line num="12" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="14" count="10" type="stmt"/>
+      </file>
+      <file name="StatusBreakdown.tsx" path="C:\Users\My PC\clutch-event-tracker\src\components\StatusBreakdown.tsx">
+        <metrics statements="3" coveredstatements="3" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="2"/>
+        <line num="7" count="3" type="stmt"/>
+        <line num="15" count="4" type="stmt"/>
+        <line num="18" count="12" type="stmt"/>
+      </file>
+      <file name="copy.ts" path="C:\Users\My PC\clutch-event-tracker\src\components\copy.ts">
+        <metrics statements="2" coveredstatements="2" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="2" count="3" type="stmt"/>
+        <line num="4" count="3" type="stmt"/>
+      </file>
+    </package>
+    <package name="src.hooks">
+      <metrics statements="10" coveredstatements="10" conditionals="7" coveredconditionals="4" methods="6" coveredmethods="6"/>
+      <file name="useDashboardData.ts" path="C:\Users\My PC\clutch-event-tracker\src\hooks\useDashboardData.ts">
+        <metrics statements="10" coveredstatements="10" conditionals="7" coveredconditionals="4" methods="6" coveredmethods="6"/>
+        <line num="15" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="20" count="4" type="stmt"/>
+        <line num="22" count="4" type="stmt"/>
+        <line num="23" count="2" type="stmt"/>
+        <line num="24" count="2" type="stmt"/>
+        <line num="26" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="29" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="32" count="2" type="stmt"/>
+        <line num="33" count="2" type="stmt"/>
+        <line num="37" count="4" type="stmt"/>
+      </file>
+    </package>
+    <package name="src.services">
+      <metrics statements="112" coveredstatements="112" conditionals="73" coveredconditionals="73" methods="52" coveredmethods="51"/>
+      <file name="csv.ts" path="C:\Users\My PC\clutch-event-tracker\src\services\csv.ts">
+        <metrics statements="33" coveredstatements="33" conditionals="16" coveredconditionals="16" methods="16" coveredmethods="16"/>
+        <line num="9" count="1516" type="stmt"/>
+        <line num="10" count="1516" type="stmt"/>
+        <line num="14" count="163" type="stmt"/>
+        <line num="15" count="163" type="stmt"/>
+        <line num="16" count="163" type="stmt"/>
+        <line num="21" count="26" type="cond" truecount="2" falsecount="0"/>
+        <line num="22" count="21" type="stmt"/>
+        <line num="23" count="21" type="stmt"/>
+        <line num="25" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="26" count="2" type="stmt"/>
+        <line num="27" count="2" type="stmt"/>
+        <line num="29" count="3" type="stmt"/>
+        <line num="30" count="3" type="stmt"/>
+        <line num="34" count="3" type="stmt"/>
+        <line num="40" count="4" type="stmt"/>
+        <line num="48" count="24301" type="stmt"/>
+        <line num="49" count="24301" type="cond" truecount="2" falsecount="0"/>
+        <line num="50" count="22783" type="stmt"/>
+        <line num="54" count="163" type="stmt"/>
+        <line num="59" count="24327" type="cond" truecount="2" falsecount="0"/>
+        <line num="60" count="24301" type="stmt"/>
+        <line num="61" count="24301" type="stmt"/>
+        <line num="66" count="12" type="cond" truecount="4" falsecount="0"/>
+        <line num="71" count="12" type="stmt"/>
+        <line num="72" count="12" type="stmt"/>
+        <line num="73" count="24327" type="stmt"/>
+        <line num="75" count="12" type="stmt"/>
+        <line num="76" count="163" type="stmt"/>
+        <line num="81" count="5" type="stmt"/>
+        <line num="82" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="83" count="32" type="stmt"/>
+        <line num="84" count="4" type="stmt"/>
+        <line num="85" count="1464" type="cond" truecount="2" falsecount="0"/>
+      </file>
+      <file name="dedupe.ts" path="C:\Users\My PC\clutch-event-tracker\src\services\dedupe.ts">
+        <metrics statements="11" coveredstatements="11" conditionals="4" coveredconditionals="4" methods="2" coveredmethods="2"/>
+        <line num="11" count="758" type="stmt"/>
+        <line num="27" count="15" type="stmt"/>
+        <line num="28" count="15" type="stmt"/>
+        <line num="29" count="15" type="stmt"/>
+        <line num="30" count="15" type="stmt"/>
+        <line num="31" count="744" type="stmt"/>
+        <line num="32" count="744" type="cond" truecount="2" falsecount="0"/>
+        <line num="33" count="55" type="stmt"/>
+        <line num="35" count="689" type="stmt"/>
+        <line num="36" count="689" type="stmt"/>
+        <line num="39" count="15" type="stmt"/>
+      </file>
+      <file name="loadDashboardData.ts" path="C:\Users\My PC\clutch-event-tracker\src\services\loadDashboardData.ts">
+        <metrics statements="8" coveredstatements="8" conditionals="4" coveredconditionals="4" methods="3" coveredmethods="2"/>
+        <line num="10" count="1" type="stmt"/>
+        <line num="17" count="1" type="stmt"/>
+        <line num="25" count="4" type="stmt"/>
+        <line num="26" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="27" count="1" type="stmt"/>
+        <line num="29" count="3" type="stmt"/>
+        <line num="37" count="2" type="stmt"/>
+        <line num="41" count="1" type="stmt"/>
+      </file>
+      <file name="normalize.ts" path="C:\Users\My PC\clutch-event-tracker\src\services\normalize.ts">
+        <metrics statements="14" coveredstatements="14" conditionals="10" coveredconditionals="10" methods="8" coveredmethods="8"/>
+        <line num="3" count="8" type="stmt"/>
+        <line num="7" count="153" type="stmt"/>
+        <line num="8" count="153" type="cond" truecount="2" falsecount="0"/>
+        <line num="13" count="1518" type="stmt"/>
+        <line num="24" count="8" type="stmt"/>
+        <line num="30" count="1469" type="cond" truecount="2" falsecount="0"/>
+        <line num="38" count="764" type="stmt"/>
+        <line num="39" count="1469" type="stmt"/>
+        <line num="40" count="764" type="cond" truecount="2" falsecount="0"/>
+        <line num="45" count="762" type="stmt"/>
+        <line num="46" count="762" type="stmt"/>
+        <line num="47" count="762" type="cond" truecount="2" falsecount="0"/>
+        <line num="52" count="153" type="stmt"/>
+        <line num="53" count="199" type="cond" truecount="2" falsecount="0"/>
+      </file>
+      <file name="parsers.ts" path="C:\Users\My PC\clutch-event-tracker\src\services\parsers.ts">
+        <metrics statements="12" coveredstatements="12" conditionals="15" coveredconditionals="15" methods="9" coveredmethods="9"/>
+        <line num="8" count="16" type="cond" truecount="3" falsecount="0"/>
+        <line num="12" count="78" type="cond" truecount="2" falsecount="0"/>
+        <line num="17" count="32" type="cond" truecount="4" falsecount="0"/>
+        <line num="21" count="13" type="stmt"/>
+        <line num="35" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="36" count="1" type="stmt"/>
+        <line num="38" count="5" type="stmt"/>
+        <line num="41" count="13" type="stmt"/>
+        <line num="46" count="1184" type="cond" truecount="2" falsecount="0"/>
+        <line num="50" count="148" type="stmt"/>
+        <line num="51" count="148" type="stmt"/>
+        <line num="66" count="3" type="stmt"/>
+      </file>
+      <file name="reconcile.ts" path="C:\Users\My PC\clutch-event-tracker\src\services\reconcile.ts">
+        <metrics statements="34" coveredstatements="34" conditionals="24" coveredconditionals="24" methods="14" coveredmethods="14"/>
+        <line num="16" count="28" type="stmt"/>
+        <line num="21" count="28" type="stmt"/>
+        <line num="22" count="28" type="stmt"/>
+        <line num="23" count="699" type="cond" truecount="2" falsecount="0"/>
+        <line num="25" count="28" type="stmt"/>
+        <line num="30" count="92" type="cond" truecount="2" falsecount="0"/>
+        <line num="31" count="89" type="stmt"/>
+        <line num="41" count="87" type="stmt"/>
+        <line num="42" count="87" type="stmt"/>
+        <line num="56" count="87" type="cond" truecount="2" falsecount="0"/>
+        <line num="57" count="27" type="stmt"/>
+        <line num="58" count="27" type="stmt"/>
+        <line num="60" count="60" type="cond" truecount="2" falsecount="0"/>
+        <line num="61" count="49" type="stmt"/>
+        <line num="63" count="11" type="stmt"/>
+        <line num="72" count="87" type="stmt"/>
+        <line num="79" count="33" type="stmt"/>
+        <line num="80" count="752" type="stmt"/>
+        <line num="81" count="33" type="stmt"/>
+        <line num="85" count="752" type="stmt"/>
+        <line num="86" count="752" type="cond" truecount="2" falsecount="0"/>
+        <line num="87" count="750" type="cond" truecount="2" falsecount="0"/>
+        <line num="88" count="752" type="stmt"/>
+        <line num="89" count="752" type="stmt"/>
+        <line num="98" count="16" type="cond" truecount="2" falsecount="0"/>
+        <line num="100" count="16" type="stmt"/>
+        <line num="101" count="16" type="stmt"/>
+        <line num="102" count="79" type="stmt"/>
+        <line num="104" count="16" type="stmt"/>
+        <line num="105" count="79" type="stmt"/>
+        <line num="111" count="694" type="stmt"/>
+        <line num="113" count="16" type="stmt"/>
+        <line num="117" count="16" type="cond" truecount="2" falsecount="0"/>
+        <line num="122" count="694" type="cond" truecount="2" falsecount="0"/>
+      </file>
+    </package>
+    <package name="src.test">
+      <metrics statements="2" coveredstatements="2" conditionals="2" coveredconditionals="2" methods="2" coveredmethods="2"/>
+      <file name="fixtures.ts" path="C:\Users\My PC\clutch-event-tracker\src\test\fixtures.ts">
+        <metrics statements="2" coveredstatements="2" conditionals="2" coveredconditionals="2" methods="2" coveredmethods="2"/>
+        <line num="4" count="12" type="stmt"/>
+        <line num="18" count="38" type="stmt"/>
+      </file>
+    </package>
+  </project>
+</coverage>
