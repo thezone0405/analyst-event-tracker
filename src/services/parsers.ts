@@ -41,18 +41,23 @@ export function parseEvents(data: unknown): EventRecord[] {
     .filter((event) => event.event_id !== '')
 }
 
+/** Reads a CSV cell by column name, trimmed; missing columns become "". */
+function cell(row: Record<string, string>, column: string): string {
+  return (row[column] ?? '').trim()
+}
+
 export function toRegistration(row: Record<string, string>): Registration {
-  const eventLabel = (row.event ?? '').trim()
+  const eventLabel = cell(row, 'event')
   return {
-    registrationId: (row.registration_id ?? '').trim(),
+    registrationId: cell(row, 'registration_id'),
     eventId: extractEventId(eventLabel),
     eventLabel,
-    firstName: (row.first_name ?? '').trim(),
-    lastName: (row.last_name ?? '').trim(),
-    email: (row.email ?? '').trim(),
-    mobile: (row.mobile ?? '').trim(),
-    registeredAt: (row.registered_at ?? '').trim(),
-    status: normalizeStatus(row.status ?? ''),
+    firstName: cell(row, 'first_name'),
+    lastName: cell(row, 'last_name'),
+    email: cell(row, 'email'),
+    mobile: cell(row, 'mobile'),
+    registeredAt: cell(row, 'registered_at'),
+    status: normalizeStatus(cell(row, 'status')),
   }
 }
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1794988483774" clover="3.2.0">
-  <project timestamp="1794988483774" name="All files">
-    <metrics statements="146" coveredstatements="146" conditionals="124" coveredconditionals="119" methods="59" coveredmethods="58" elements="329" coveredelements="323" complexity="0" loc="146" ncloc="146" packages="6" files="17" classes="17"/>
+<coverage generated="1794988853739" clover="3.2.0">
+  <project timestamp="1794988853739" name="All files">
+    <metrics statements="147" coveredstatements="147" conditionals="110" coveredconditionals="105" methods="60" coveredmethods="59" elements="317" coveredelements="311" complexity="0" loc="147" ncloc="147" packages="6" files="17" classes="17"/>
     <package name="public.data">
       <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
       <file name="events.json" path="C:\Users\My PC\clutch-event-tracker\public\data\events.json">
@@ -82,7 +82,7 @@
       </file>
     </package>
     <package name="src.services">
-      <metrics statements="107" coveredstatements="107" conditionals="97" coveredconditionals="97" methods="41" coveredmethods="40"/>
+      <metrics statements="108" coveredstatements="108" conditionals="83" coveredconditionals="83" methods="42" coveredmethods="41"/>
       <file name="csv.ts" path="C:\Users\My PC\clutch-event-tracker\src\services\csv.ts">
         <metrics statements="30" coveredstatements="30" conditionals="22" coveredconditionals="22" methods="12" coveredmethods="12"/>
         <line num="9" count="1516" type="stmt"/>
@@ -160,7 +160,7 @@
         <line num="41" count="199" type="cond" truecount="2" falsecount="0"/>
       </file>
       <file name="parsers.ts" path="C:\Users\My PC\clutch-event-tracker\src\services\parsers.ts">
-        <metrics statements="11" coveredstatements="11" conditionals="29" coveredconditionals="29" methods="8" coveredmethods="8"/>
+        <metrics statements="12" coveredstatements="12" conditionals="15" coveredconditionals="15" methods="9" coveredmethods="9"/>
         <line num="8" count="16" type="cond" truecount="3" falsecount="0"/>
         <line num="12" count="78" type="cond" truecount="2" falsecount="0"/>
         <line num="17" count="32" type="cond" truecount="4" falsecount="0"/>
@@ -169,9 +169,10 @@
         <line num="36" count="1" type="stmt"/>
         <line num="38" count="5" type="stmt"/>
         <line num="41" count="13" type="stmt"/>
-        <line num="45" count="148" type="cond" truecount="2" falsecount="0"/>
-        <line num="46" count="148" type="stmt"/>
-        <line num="61" count="3" type="stmt"/>
+        <line num="46" count="1184" type="cond" truecount="2" falsecount="0"/>
+        <line num="50" count="148" type="stmt"/>
+        <line num="51" count="148" type="stmt"/>
+        <line num="66" count="3" type="stmt"/>
       </file>
       <file name="reconcile.ts" path="C:\Users\My PC\clutch-event-tracker\src\services\reconcile.ts">
         <metrics statements="32" coveredstatements="32" conditionals="24" coveredconditionals="24" methods="10" coveredmethods="10"/>
