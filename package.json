@@ -12,7 +12,8 @@
     "test": "vitest",
     "test:unit": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:crap": "crap4ts --threshold 7 --coverage coverage/coverage-final.json",
+    "pretest:crap": "npm run test:coverage",
+    "test:crap": "crap4ts --threshold 7 --coverage coverage/coverage-final.json --format json > reports/crap-report.json",
     "test:mutation": "stryker run",
     "test:bdd": "cucumber-js",
     "verify": "npm run typecheck && npm run lint && npm run test:unit && npm run build",
@@ -27,7 +28,6 @@
   "devDependencies": {
     "@cucumber/cucumber": "^13.3.0",
     "@eslint/js": "^10.0.1",
-    "@sebassdc/crap4ts": "^0.1.1",
     "@stryker-mutator/core": "^10.1.1",
     "@stryker-mutator/jest-runner": "^10.1.1",
     "@testing-library/jest-dom": "^7.0.1",

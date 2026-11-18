@@ -5,6 +5,16 @@ import path from "path";
 
 const MAX_RETRIES = 25;
 
+const CRAP_REPORT_PATH = path.resolve(
+  process.cwd(),
+  "reports/crap-report.json",
+);
+
+const CLEANER_BASELINE_PATH = path.resolve(
+  process.cwd(),
+  "reports/cleaner/baseline-crap-report.json",
+);
+
 interface AgentConfig {
   role: string;
   systemPrompt: string;
@@ -26,21 +36,51 @@ const AGENT_DEFINITIONS: Record<string, AgentConfig> = {
       "Bash(npx vitest:*)",
       "Bash(npx tsc:*)",
     ],
-    maxTurns: 25,
+    maxTurns: 15,
   },
   cleaner: {
     role: "Cleaner Agent",
     model: "sonnet",
-    systemPrompt:
-      "You are a refactoring specialist. Refactor TypeScript logic to lower CRAP scores below 7 while keeping Vitest tests green.",
-    allowedTools: [
-      "Read",
-      "Edit",
-      "Write",
-      "Bash(npx vitest:*)",
-      "Bash(npx crap4ts:*)",
-    ],
-    maxTurns: 15,
+    systemPrompt: `
+You are a Senior TypeScript Refactoring Specialist.
+
+Your responsibility is to reduce CRAP scores while preserving existing behavior,
+architecture, and public interfaces.
+
+You are provided with a baseline CRAP4TS JSON report in your prompt. The complete
+baseline is also preserved at reports/cleaner/baseline-crap-report.json.
+
+OBJECTIVES:
+1. Analyze the baseline report.
+2. Identify functions with CRAP scores greater than 7.
+3. Prioritize functions with the highest CRAP scores.
+4. Refactor those functions to reduce cyclomatic complexity and improve test
+   coverage where appropriate.
+5. Preserve existing behavior, public interfaces, and architectural boundaries.
+6. Do not remove tests, weaken assertions, or modify tests solely to make the
+   CRAP score pass.
+7. Do not modify coverage configuration or CRAP thresholds.
+
+WORKFLOW:
+1. Read and analyze the baseline CRAP report provided in the prompt.
+2. Inspect the source files containing the highest-scoring functions.
+3. Refactor incrementally, prioritizing the highest-risk functions.
+4. Run npm run test:crap after meaningful changes.
+5. Read reports/crap-report.json to inspect the latest results.
+6. Compare the latest results against the original baseline.
+7. Continue until all targeted functions meet the threshold or reasonable
+   refactoring options have been exhausted.
+
+FINAL RESPONSE:
+- Functions refactored.
+- Original and final CRAP scores.
+- Changes in cyclomatic complexity.
+- Changes in test coverage, where available.
+- Remaining functions above threshold.
+- Any behavior or architectural concerns.
+`,
+    allowedTools: ["Read", "Edit", "Write", "Bash(npm run test:crap)"],
+    maxTurns: 25,
   },
   hardener: {
     role: "Hardener Agent",
@@ -79,11 +119,13 @@ function computeFileHash(filePath: string): string {
     .digest("hex");
 }
 
-// Purges stale caches and build artifacts to prevent cross-agent context bleed
+// Preserve reports between attempts. They are agent inputs, not disposable caches.
 function purgeWorkspaceCache(): void {
-  const cacheDirs = ["coverage", ".vitest", "reports", ".stryker-tmp"];
+  const cacheDirs = ["coverage", ".vitest", ".stryker-tmp"];
+
   for (const dir of cacheDirs) {
     const fullPath = path.resolve(process.cwd(), dir);
+
     if (fs.existsSync(fullPath)) {
       fs.rmSync(fullPath, { recursive: true, force: true });
     }
@@ -104,6 +146,7 @@ function runCommand(command: string): {
       stdio: ["pipe", "pipe", "pipe"],
       env: cleanEnv,
     });
+
     return { code: 0, stdout, stderr: "" };
   } catch (error: unknown) {
     const err = error as {
@@ -112,6 +155,7 @@ function runCommand(command: string): {
       stderr?: string;
       message?: string;
     };
+
     return {
       code: err.status ?? 1,
       stdout: err.stdout ?? "",
@@ -133,11 +177,75 @@ function runAgentCommand(command: string): number {
       stdio: "inherit",
       env: cleanEnv,
     });
+
     return 0;
   } catch (error: unknown) {
     const err = error as { status?: number };
     return err.status ?? 1;
   }
+}
+
+/**
+ * Runs coverage + CRAP analysis before Cleaner starts, validates the generated
+ * JSON, and copies it to an immutable baseline location for comparisons.
+ *
+ * A non-zero analyzer exit code is logged but does not automatically abort here:
+ * some CRAP CLI versions use a non-zero code when the threshold is exceeded.
+ * A missing or malformed report always aborts the Cleaner stage.
+ */
+function generateCleanerBaseline(): string {
+  fs.mkdirSync(path.dirname(CRAP_REPORT_PATH), { recursive: true });
+  fs.mkdirSync(path.dirname(CLEANER_BASELINE_PATH), { recursive: true });
+
+  // Avoid accidentally accepting a stale report from an earlier run.
+  fs.rmSync(CRAP_REPORT_PATH, { force: true });
+  fs.rmSync(CLEANER_BASELINE_PATH, { force: true });
+
+  console.log("\n📊 Generating Cleaner baseline CRAP report...");
+  const result = runCommand("npm run test:crap");
+
+  if (!fs.existsSync(CRAP_REPORT_PATH)) {
+    throw new Error(
+      [
+        "CRAP report was not generated at reports/crap-report.json.",
+        result.stderr,
+        result.stdout,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+
+  const report = fs.readFileSync(CRAP_REPORT_PATH, "utf8");
+
+  try {
+    JSON.parse(report);
+  } catch {
+    throw new Error(
+      "reports/crap-report.json exists but does not contain valid JSON.",
+    );
+  }
+
+  fs.copyFileSync(CRAP_REPORT_PATH, CLEANER_BASELINE_PATH);
+  console.log(`✓ Baseline saved: ${CLEANER_BASELINE_PATH}`);
+
+  if (result.code !== 0) {
+    console.warn(
+      `⚠️ Baseline command exited with code ${result.code}. The JSON report is valid, so Cleaner will receive it; inspect the command output if this was not an expected threshold failure.`,
+    );
+    if (result.stderr) console.warn(result.stderr);
+    if (result.stdout) console.warn(result.stdout);
+  }
+
+  return report;
+}
+
+function readLatestCrapReport(): string {
+  if (!fs.existsSync(CRAP_REPORT_PATH)) {
+    return "Latest CRAP report was not found at reports/crap-report.json.";
+  }
+
+  return fs.readFileSync(CRAP_REPORT_PATH, "utf8");
 }
 
 function executeStageWithRetry(
@@ -146,6 +254,7 @@ function executeStageWithRetry(
   gateName: string,
   gateCommand: string,
   preGateCommand?: string,
+  additionalContext?: string,
 ): boolean {
   const agent = AGENT_DEFINITIONS[agentKey];
   let lastErrorDetails = "";
@@ -154,30 +263,35 @@ function executeStageWithRetry(
     purgeWorkspaceCache();
 
     const startTime = new Date().toISOString();
-    console.log(`\n==================================================`);
+    console.log("\n==================================================");
     console.log(
       `🤖 [${startTime}] Spawning ${agent.role} (Attempt ${attempt}/${MAX_RETRIES}) [Isolated Context]`,
     );
-    console.log(`==================================================`);
+    console.log("==================================================");
 
-    // Strict minimal context payload construction
+    // Construct the prompt from the agent instructions and Gherkin specification.
     const specContent = fs.readFileSync(specPath, "utf8");
     let fullPrompt = `${agent.systemPrompt}\n\nSPECIFICATION (${path.basename(specPath)}):\n\`\`\`gherkin\n${specContent}\n\`\`\``;
 
+    if (additionalContext) {
+      fullPrompt += `\n\nADDITIONAL CONTEXT:\n${additionalContext}\n`;
+    }
+
     if (attempt > 1 && lastErrorDetails) {
       console.log(
-        `\n🔍 [Minimal Feedback] Appending exact factual error report to prompt...`,
+        "\n🔍 [Minimal Feedback] Appending exact factual error report to prompt...",
       );
       fullPrompt += `\n\nFACTUAL ERROR FROM PREVIOUS ATTEMPT (${gateName}):\n\`\`\`\n${lastErrorDetails}\n\`\`\``;
     }
 
-    // Approximate token estimation (rough heuristic: ~4 characters per token)
     const estimatedInputTokens = Math.ceil(fullPrompt.length / 4);
     console.log(
       `📊 [Token Telemetry] Estimated Input Prompt: ~${estimatedInputTokens} tokens (${fullPrompt.length} chars)`,
     );
 
-    const allowedToolsArgs = agent.allowedTools.map((t) => `"${t}"`).join(" ");
+    const allowedToolsArgs = agent.allowedTools
+      .map((tool) => `"${tool}"`)
+      .join(" ");
 
     const cmd = [
       "npx",
@@ -196,7 +310,6 @@ function executeStageWithRetry(
     const agentCode = runAgentCommand(cmd);
     const agentDuration = ((Date.now() - agentStart) / 1000).toFixed(2);
 
-    // Estimate output consumption based on max turns and typical output volume
     const estimatedOutputTokens = agent.maxTurns * 150;
     console.log(
       `📊 [Token Telemetry] Session Summary: Duration: ${agentDuration}s | Max Turn Budget: ${agent.maxTurns} | Est. Total Session Tokens: ~${estimatedInputTokens + estimatedOutputTokens}`,
@@ -235,13 +348,22 @@ function executeStageWithRetry(
       return true;
     }
 
-    lastErrorDetails = gateRes.stderr || gateRes.stdout;
+    lastErrorDetails = [
+      gateRes.stderr,
+      gateRes.stdout,
+      agentKey === "cleaner"
+        ? `LATEST CRAP REPORT:\n${readLatestCrapReport()}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
     console.error(
       `\n❌ [${new Date().toISOString()}] Verification Gate "${gateName}" FAILED in ${gateDuration}s.`,
     );
-    console.error(`---------------- Factual Error Report ----------------`);
+    console.error("---------------- Factual Error Report ----------------");
     console.error(lastErrorDetails.trim());
-    console.error(`------------------------------------------------------`);
+    console.error("------------------------------------------------------");
   }
 
   console.error(
@@ -250,15 +372,17 @@ function executeStageWithRetry(
   return false;
 }
 
-function main() {
+function main(): void {
   const args = process.argv.slice(2);
   const specIndex = args.indexOf("--spec");
+
   if (specIndex === -1 || !args[specIndex + 1]) {
     console.error("✗ Error: Provide a spec file using --spec <path>");
     process.exit(1);
   }
 
   const specPath = path.resolve(args[specIndex + 1]);
+
   if (!fs.existsSync(specPath)) {
     console.error(`✗ Error: Spec not found at ${specPath}`);
     process.exit(1);
@@ -268,16 +392,16 @@ function main() {
   const initialHash = computeFileHash(specPath);
 
   runCommand(`git add "${specPath}"`);
-  if (runCommand(`git diff --cached --quiet`).code !== 0) {
+  if (runCommand("git diff --cached --quiet").code !== 0) {
     runCommand(
       `git commit -m "docs(spec): lock human-authored baseline for ${path.basename(specPath)}"`,
     );
-    console.log(`✓ Committed spec baseline.`);
+    console.log("✓ Committed spec baseline.");
   }
 
   try {
     console.log(
-      `\n--- Starting Optimized Isolated Agent Gauntlet Pipeline ---`,
+      "\n--- Starting Optimized Isolated Agent Gauntlet Pipeline ---",
     );
 
     // STAGE 1: CODER
@@ -291,22 +415,46 @@ function main() {
     ) {
       process.exit(1);
     }
+
     runCommand(
       `git add . && git commit -m "feat(coder): implement feature and unit tests"`,
     );
 
     // STAGE 2: CLEANER
+    // Generate the report after Coder finishes, before Cleaner is spawned.
+    const cleanerBaseline = generateCleanerBaseline();
+
+    const cleanerContext = `
+BASELINE CRAP4TS REPORT
+
+The following JSON is the original CRAP analysis generated after the Coder stage
+and before any Cleaner modifications.
+
+Baseline file: ${CLEANER_BASELINE_PATH}
+Latest report file: ${CRAP_REPORT_PATH}
+
+Treat the baseline file and the JSON below as immutable reference data. Do not
+overwrite the baseline. Run npm run test:crap to regenerate the latest report.
+Compare each subsequent report against this baseline.
+
+\`\`\`json
+${cleanerBaseline}
+\`\`\`
+`;
+
     if (
       !executeStageWithRetry(
         "cleaner",
         specPath,
         "CRAP4TS Analysis",
-        "npx crap4ts --threshold 7 --coverage coverage/coverage-final.json",
-        "npx vitest run --coverage",
+        "npm run test:crap",
+        undefined,
+        cleanerContext,
       )
     ) {
       process.exit(1);
     }
+
     runCommand(
       `git add . && git commit -m "refactor(clean): optimize complexity"`,
     );
@@ -322,6 +470,7 @@ function main() {
     ) {
       process.exit(1);
     }
+
     runCommand(
       `git add . && git commit -m "test(hardener): pass mutation score thresholds"`,
     );
@@ -337,12 +486,14 @@ function main() {
     ) {
       process.exit(1);
     }
+
     runCommand(
       `git add . && git commit -m "test(qa): pass BDD acceptance scenarios"`,
     );
 
-    console.log(`\n-> Running final Vite production build check...`);
+    console.log("\n-> Running final Vite production build check...");
     const buildRes = runCommand("npm run build");
+
     if (buildRes.code !== 0) {
       console.error(
         `❌ Final Vite production build failed:\n${buildRes.stderr}`,
@@ -351,7 +502,7 @@ function main() {
     }
 
     console.log(
-      `\n🎉 Deterministic agent gauntlet completed successfully! Ready for Vercel.`,
+      "\n🎉 Deterministic agent gauntlet completed successfully! Ready for Vercel.",
     );
   } finally {
     if (computeFileHash(specPath) !== initialHash) {
@@ -361,6 +512,7 @@ function main() {
       runCommand(`git checkout "${specPath}"`);
       process.exit(1);
     }
+
     console.log("✓ Spec integrity verified.");
   }
 }
