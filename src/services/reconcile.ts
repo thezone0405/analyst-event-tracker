@@ -5,7 +5,7 @@ import type {
   Registration,
   StatusCounts,
 } from '../types'
-import { deduplicate } from './dedupe'
+import { deduplicate, type DedupeResult } from './dedupe'
 
 export interface ReconcileOptions {
   /** Filter duplicate double-submissions (default: true). */
@@ -31,9 +31,11 @@ export function percentOf(count: number, target: number): number {
   return Math.round((count / target) * 100)
 }
 
+type ProgressFields = Pick<EventSummary, 'source' | 'confirmed' | 'breakdown'>
+
 function buildSummary(
   event: EventRecord,
-  fields: Pick<EventSummary, 'source' | 'confirmed' | 'breakdown'>,
+  fields: ProgressFields,
   duplicatesFiltered: number,
 ): EventSummary {
   const target = Math.max(0, event.target_registrations)
@@ -47,30 +49,27 @@ function buildSummary(
 }
 
 /**
- * Summarizes one event. Live CSV rows take precedence; when an event has no
+ * Picks the progress source. Live CSV rows take precedence; when an event has no
  * live rows we fall back to the nightly snapshot, which has no status breakdown.
  */
+function resolveProgress(event: EventRecord, liveRows: readonly Registration[]): ProgressFields {
+  if (liveRows.length > 0) {
+    const breakdown = countByStatus(liveRows)
+    return { source: 'live', confirmed: breakdown.Accepted, breakdown }
+  }
+  if (event.current_registrations !== null) {
+    return { source: 'snapshot', confirmed: event.current_registrations, breakdown: null }
+  }
+  return { source: 'none', confirmed: 0, breakdown: null }
+}
+
+/** Summarizes one event from its live rows, falling back to the nightly snapshot. */
 export function summarizeEvent(
   event: EventRecord,
   liveRows: readonly Registration[],
   duplicatesFiltered = 0,
 ): EventSummary {
-  if (liveRows.length > 0) {
-    const breakdown = countByStatus(liveRows)
-    return buildSummary(
-      event,
-      { source: 'live', confirmed: breakdown.Accepted, breakdown },
-      duplicatesFiltered,
-    )
-  }
-  if (event.current_registrations !== null) {
-    return buildSummary(
-      event,
-      { source: 'snapshot', confirmed: event.current_registrations, breakdown: null },
-      duplicatesFiltered,
-    )
-  }
-  return buildSummary(event, { source: 'none', confirmed: 0, breakdown: null }, duplicatesFiltered)
+  return buildSummary(event, resolveProgress(event, liveRows), duplicatesFiltered)
 }
 
 /** Groups registrations by their extracted event ID. Rows without an ID are skipped. */
@@ -93,10 +92,7 @@ export function reconcile(
   registrations: readonly Registration[],
   options: ReconcileOptions = {},
 ): ReconciliationResult {
-  const shouldDedupe = options.deduplicate ?? true
-  const { kept, duplicates } = shouldDedupe
-    ? deduplicate(registrations)
-    : { kept: [...registrations], duplicates: [] }
+  const { kept, duplicates } = applyDedupe(registrations, options.deduplicate ?? true)
 
   const liveByEvent = groupByEventId(kept)
   const duplicatesByEvent = groupByEventId(duplicates)
@@ -109,9 +105,16 @@ export function reconcile(
       duplicatesByEvent.get(event.event_id)?.length ?? 0,
     ),
   )
-  const unmatchedRows = kept.filter(
-    (registration) => !registration.eventId || !knownIds.has(registration.eventId),
-  )
+  const unmatchedRows = kept.filter((registration) => !isScheduled(registration, knownIds))
 
   return { summaries, duplicateCount: duplicates.length, unmatchedRows }
+}
+
+function applyDedupe(registrations: readonly Registration[], active: boolean): DedupeResult {
+  return active ? deduplicate(registrations) : { kept: [...registrations], duplicates: [] }
+}
+
+/** True when the row's extracted event ID exists in the master schedule. */
+function isScheduled(registration: Registration, knownIds: ReadonlySet<string>): boolean {
+  return registration.eventId !== null && knownIds.has(registration.eventId)
 }

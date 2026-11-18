@@ -30,11 +30,24 @@ function readQuoted(state: ParserState, char: string, next: string | undefined):
   return 0
 }
 
+function startQuotes(state: ParserState): void {
+  state.inQuotes = true
+}
+
+function ignoreChar(): void {}
+
+/** Structural characters outside quotes; anything else is appended to the current field. */
+const UNQUOTED_HANDLERS = new Map<string, (state: ParserState) => void>([
+  ['"', startQuotes],
+  [',', endField],
+  ['\n', endRow],
+  ['\r', ignoreChar],
+])
+
 function readUnquoted(state: ParserState, char: string): void {
-  if (char === '"') state.inQuotes = true
-  else if (char === ',') endField(state)
-  else if (char === '\n') endRow(state)
-  else if (char !== '\r') state.field += char
+  const handler = UNQUOTED_HANDLERS.get(char)
+  if (handler) handler(state)
+  else state.field += char
 }
 
 function isBlankRow(row: string[]): boolean {

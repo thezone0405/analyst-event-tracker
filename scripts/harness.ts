@@ -3,7 +3,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 
-const MAX_RETRIES = 7;
+const MAX_RETRIES = 10;
 
 interface AgentConfig {
   role: string;
@@ -130,16 +130,17 @@ function executeStageWithRetry(
   preGateCommand?: string,
 ): boolean {
   const agent = AGENT_DEFINITIONS[agentKey];
+  let lastErrorDetails = "";
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     console.log(
       `\n🤖 [Attempt ${attempt}/${MAX_RETRIES}] Spawning ${agent.role}...`,
     );
 
-    const fullPrompt =
-      attempt === 1
-        ? `${agent.systemPrompt}\nTarget Specification: ${specPath}`
-        : `${agent.systemPrompt}\nTarget Specification: ${specPath}\n⚠️ PREVIOUS ATTEMPT FAILED verification gate "${gateName}". Review the failure, fix the implementation or tests, and try again.`;
+    let fullPrompt = `${agent.systemPrompt}\nTarget Specification: ${specPath}`;
+    if (attempt > 1 && lastErrorDetails) {
+      fullPrompt += `\n\n⚠️ PREVIOUS ATTEMPT FAILED verification gate "${gateName}".\nHere is the exact error output you must fix:\n\`\`\`\n${lastErrorDetails}\n\`\`\`\nReview this error, fix the implementation or tests, and try again.`;
+    }
 
     const allowedToolsArgs = agent.allowedTools.map((t) => `"${t}"`).join(" ");
 
@@ -161,12 +162,18 @@ function executeStageWithRetry(
       console.log(
         `  ⚠️ ${agent.role} exited with code ${agentCode} on attempt ${attempt}.`,
       );
+      lastErrorDetails = `Agent process exited with code ${agentCode} (possibly reached max turns or encountered a tool error).`;
       continue;
     }
 
     if (preGateCommand) {
       console.log(`  -> Running pre-gate step: ${preGateCommand}`);
-      runCommand(preGateCommand);
+      const preRes = runCommand(preGateCommand);
+      if (preRes.code !== 0) {
+        lastErrorDetails = preRes.stderr || preRes.stdout;
+        console.log(`  ❌ Pre-gate step failed on attempt ${attempt}.`);
+        continue;
+      }
     }
 
     console.log(`  -> Running verification gate: ${gateName} (${gateCommand})`);
@@ -177,7 +184,8 @@ function executeStageWithRetry(
       return true;
     }
 
-    const errorOutput = (gateRes.stderr || gateRes.stdout).slice(-400);
+    lastErrorDetails = gateRes.stderr || gateRes.stdout;
+    const errorOutput = lastErrorDetails.slice(-400);
     console.log(
       `  ❌ ${gateName} failed on attempt ${attempt}.\nError preview:\n${errorOutput}`,
     );
