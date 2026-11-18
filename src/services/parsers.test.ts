@@ -57,6 +57,10 @@ describe('parseEvents', () => {
     expect(parseEvents([null, 'E1', [], { name: 'no id' }, { event_id: 'E2' }])).toHaveLength(1)
   })
 
+  it('drops undefined and primitive entries without throwing', () => {
+    expect(parseEvents([undefined, 42, true, { event_id: 'E3' }])).toHaveLength(1)
+  })
+
   it('throws when the payload is not an array', () => {
     expect(() => parseEvents({ events: [] })).toThrow('Event schedule must be a JSON array')
   })

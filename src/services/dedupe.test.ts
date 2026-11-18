@@ -36,6 +36,13 @@ describe('duplicateKey', () => {
     const b = makeRegistration({ eventId: null, eventLabel: 'Mystery event B' })
     expect(duplicateKey(a)).not.toBe(duplicateKey(b))
   })
+
+  it('separates key parts so shifted name boundaries are not collapsed together', () => {
+    const a = makeRegistration({ firstName: 'ab', lastName: 'c' })
+    const b = makeRegistration({ firstName: 'a', lastName: 'bc' })
+    expect(duplicateKey(a)).not.toBe(duplicateKey(b))
+    expect(duplicateKey(a)).toContain('|ab|c|')
+  })
 })
 
 describe('deduplicate', () => {

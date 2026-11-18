@@ -51,6 +51,11 @@ describe('normalizeMobile', () => {
     expect(normalizeMobile('61123')).toBe('61123')
     expect(normalizeMobile('')).toBe('')
   })
+
+  it('only treats 11-digit numbers starting with 61 as international', () => {
+    expect(normalizeMobile('12345678901')).toBe('12345678901')
+    expect(normalizeMobile('61427874296')).toBe('0427874296')
+  })
 })
 
 describe('normalizeTimestamp', () => {

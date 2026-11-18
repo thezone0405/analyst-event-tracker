@@ -6,6 +6,8 @@
       "Bash(npx crap4ts *)",
       "Bash(npx stryker *)",
       "Bash(npx tsc *)",
+      "Bash(npm run test:bdd)",
+      "Bash(npm run test:crap)",
       "Read(coverage/**)",
       "Read(reports/**)"
     ]

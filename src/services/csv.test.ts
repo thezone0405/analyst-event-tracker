@@ -37,6 +37,18 @@ describe('parseCsv', () => {
   it('returns no rows for empty input', () => {
     expect(parseCsv('')).toEqual([])
   })
+
+  it('flushes a final single-field row that has no trailing newline or comma', () => {
+    expect(parseCsv('a')).toEqual([['a']])
+    expect(parseCsv('h\nvalue')).toEqual([['h'], ['value']])
+  })
+
+  it('flushes a final row ending in an empty field', () => {
+    expect(parseCsv('a,b\nc,')).toEqual([
+      ['a', 'b'],
+      ['c', ''],
+    ])
+  })
 })
 
 describe('parseCsvRecords', () => {
