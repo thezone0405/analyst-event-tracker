@@ -1,0 +1,146 @@
+registration_id,event,first_name,last_name,email,company,job_title,mobile,registered_at,status
+R1057,E125 Identity Leaders Roundtable SYD,James,Lopez,james.lopez@northwindbank.example,Northwind Bank,Head of Infrastructure,+61 427 874 296,2026-10-03T15:22:00+11:00,Accepted
+R1002,E125 Identity Leaders Roundtable SYD,Arjun,Patel,arjun.patel[at]harbourins.example,Harbour Insurance,Head of Security Operations,0461559407,2026-10-13T09:35:00+11:00,Accepted
+R1027,E114 Platform Engineering Dinner MEL,Arjun,Nguyen,arjun.nguyen@harbourins.example,Harbour Insurance,CTO,0442940196,2026-10-14T17:32:00+11:00,Accepted
+R1115,E125 Identity Leaders Roundtable SYD,Arjun,Wilson,arjun.wilson@ironbark.example,Ironbark Mining,IT Director,0475841616,2026-10-18T12:20:00+11:00,Accepted
+R1124,E101 Sydney Cloud Security Summit,Isla,Walker,,Coastline Energy,Security Architect,458414384,2026-10-20T16:05:00+11:00,Cancelled
+R1011,E125 Identity Leaders Roundtable SYD,Sofia,Wong,sofia.wong@paperbark.example,Paperbark Media,Head of Infrastructure,0463834657,2026-10-04T11:14:00+11:00,Accepted
+R1023,E101 Sydney Cloud Security Summit,Sofia,Wilson,sofia.wilson@ironbark.example,Ironbark Mining,CTO,0486801128,2026-10-19T16:09:00+11:00,Accepted
+R1079,E114 Platform Engineering Dinner MEL,Ava,Silva,ava.silva@silverline.example,Silverline Super,IT Director,0439335290,2026-10-05T16:16:00+11:00,Accepted
+R1116,E101 Sydney Cloud Security Summit,Ethan,Walker,ethan.walker@kestrel.example,Kestrel Logistics,CTO,0447962757,2026-10-20T14:17:00+11:00,Accepted
+R1104,E114 Platform Engineering Dinner MEL,Grace,Tran,grace.tran[at]auroratel.example,Aurora Telecom,Head of Data,0422292706,2026-10-15T17:18:00+11:00,Accepted
+R1055,E125 Identity Leaders Roundtable SYD,Jack,Chen,,Northwind Bank,Security Architect,0424994717,2026-10-23T14:17:00+11:00,Cancelled
+R1025,E114 Platform Engineering Dinner MEL,Isla,Wilson,isla.wilson@auroratel.example,Aurora Telecom,Chief Information Security Officer,402563421,2026-10-16T11:12:00+11:00,Accepted
+R1098,E125 Identity Leaders Roundtable SYD,Noah,Kim,noah.kim@kestrel.example,Kestrel Logistics,Chief Information Security Officer,0411998679,2026-10-15T20:36:00+11:00,Accepted
+R1051,E114 Platform Engineering Dinner MEL,Ava,Lopez,ava.lopez@northwindbank.example,Northwind Bank,Head of Platform Engineering,0422941318,2026-10-20T20:39:00+11:00,Accepted
+R1070,E101 Sydney Cloud Security Summit,Chloe,Lee,chloe.lee[at]outlook.com,Aurora Telecom,Head of Platform Engineering,+61 495 944 064,2026-10-22T20:47:00+11:00,Accepted
+R1001,E101 Sydney Cloud Security Summit,Kate,Nguyen,kate.nguyen@silverline.example,Silverline Super,GM Technology,0438637940,2026-10-11T12:09:00+11:00,Accepted
+R1076,E114 Platform Engineering Dinner MEL,  DANIEL ,Murphy,daniel.murphy@harbourins.example,Harbour Insurance,Head of Platform Engineering,0413826758,2026-10-24T19:09:00+11:00,Accepted
+R1010,E101 Sydney Cloud Security Summit,Wei,Singh,wei.singh@coastline.example,Coastline Energy,IT Director,0403911718,2026-10-22T15:35:00+11:00,Accepted
+R1009,E101 Sydney Cloud Security Summit,Chloe,Reyes,,Kestrel Logistics,Head of Platform Engineering,0489325288,2026-10-11T15:01:00+11:00,Accepted
+R1102,E125 Identity Leaders Roundtable SYD,Grace,Tran,grace.tran@harbourins,Harbour Insurance,CTO,448652816,2026-10-01T13:19:00+11:00,Accepted
+R1029,E101 Sydney Cloud Security Summit,Lucas,Ito,lucas.ito@kestrel.example,Kestrel Logistics,GM Technology,0484656482,2026-10-22T14:43:00+11:00,Accepted
+R1075,E125 Identity Leaders Roundtable SYD,Ruby,Murphy,ruby.murphy@northwindbank.example,Northwind Bank,GM Technology,0498593174,2026-10-04T10:02:00+11:00,Accepted
+R1020,E101 Sydney Cloud Security Summit,Luke,Lopez,luke.lopez@harbourins.example,Harbour Insurance,CTO,0418384251,2026-10-10T10:28:00+11:00,Cancelled
+R1120,E125 Identity Leaders Roundtable SYD,Zoe,Patel,zoe.patel@bluegumhealth.example,Bluegum Health,Risk Manager,0417271551,2026-10-10T12:54:00+11:00,Accepted
+R1059,E114 Platform Engineering Dinner MEL,Kenji,Wong,kenji.wong@northwindbank.example,Northwind Bank,Head of Infrastructure,0487603859,2026-10-25T08:13:00+11:00,Accepted
+R1046,E101 Sydney Cloud Security Summit,Tom,Taylor,tom.taylor@harbourins.example,Harbour Insurance,Head of Security Operations,0436783777,2026-10-10T11:25:00+11:00,Accepted
+R1000,E101 Sydney Cloud Security Summit,Lucas,Nguyen,lucas.nguyen@kestrel.example,Kestrel Logistics,Chief Information Security Officer,0433218196,2026-10-03T11:14:00+11:00,Cancelled
+R1128,E101 Sydney Cloud Security Summit,Lily,Clarke,lily.clarke@harbourins.example,Harbour Insurance,Chief Information Security Officer,0453714732,2026-10-10T14:55:00+11:00,Pending
+R1085,E125 Identity Leaders Roundtable SYD,  WEI ,Brown,wei.brown@ironbark.example,Ironbark Mining,Chief Information Security Officer,0411116152,2026-10-19T16:35:00+11:00,Accepted
+R1032,E101 Sydney Cloud Security Summit,Anika,Tran,,Harbour Insurance,Chief Information Security Officer,0476936763,2026-10-25T20:56:00+11:00,Accepted
+R1210,E101 Sydney Cloud Security Summit,Wei,Singh,wei.singh@coastline.example,Coastline Energy,IT Director,0403911718,2026-10-22T15:35:00+11:00,Accepted
+R1125,E101 Sydney Cloud Security Summit,Isla,Lopez,isla.lopez@paperbark.example,Paperbark Media,Chief Information Security Officer,0422995900,2026-10-21T20:36:00+11:00,Accepted
+R1021,E125 Identity Leaders Roundtable SYD,Daniel,Tran,daniel.tran@silverline.example,Silverline Super,Risk Manager,0408412411,2026-10-05T12:18:00+11:00,Pending
+R1077,E114 Platform Engineering Dinner MEL,Chloe,Murphy,chloe.murphy@paperbark.example,Paperbark Media,Head of Security Operations,0464053773,2026-10-22T13:34:00+11:00,Accepted
+R1054,E125 Identity Leaders Roundtable SYD,Emily,Cruz,emily.cruz@kestrel.example,Kestrel Logistics,Head of Data,0471349361,2026-10-21T10:58:00+11:00,Accepted
+R1096,E125 Identity Leaders Roundtable SYD,Zoe,Wilson,zoe.wilson@paperbark.example,Paperbark Media,Head of Platform Engineering,+61 421 277 997,2026-10-21T18:39:00+11:00,Accepted
+R1042,E101 Sydney Cloud Security Summit,Kenji,Cruz,kenji.cruz@coastline.example,Coastline Energy,CTO,0419314919,2026-10-18T14:42:00+11:00,Accepted
+R1014,E101 Sydney Cloud Security Summit,Mei,Rossi,mei.rossi@auroratel.example,Aurora Telecom,Head of Data,470106513,2026-10-18T15:08:00+11:00,Accepted
+R1089,E125 Identity Leaders Roundtable SYD,Tom,Taylor,tom.taylor@auroratel.example,Aurora Telecom,Head of Security Operations,0467525459,2026-10-02T10:10:00+11:00,Pending
+R1003,E114 Platform Engineering Dinner MEL,Luke,Kim,luke.kim@paperbark.example,Paperbark Media,Security Architect,431034131,2026-10-15T18:53:00+11:00,Accepted
+R1056,E101 Sydney Cloud Security Summit,Sarah,Murphy,sarah.murphy@ironbark.example,Ironbark Mining,Head of Data,0419065940,2026-10-22T17:37:00+11:00,Accepted
+R1095,E114 Platform Engineering Dinner MEL,Arjun,Lee,arjun.lee@summitretail.example,Summit Retail Group,IT Director,0421818835,2026-10-08T09:09:00+11:00,Accepted
+R1119,E114 Platform Engineering Dinner MEL,James,Lee,james.lee@harbourins.example,Harbour Insurance,Head of Infrastructure,0402786814,2026-10-07T17:18:00+11:00,Accepted
+R1039,E114 Platform Engineering Dinner MEL,Omar,Wilson,omar.wilson@northwindbank.example,Northwind Bank,GM Technology,0446537556,2026-10-09T09:30:00+11:00,Accepted
+R1333,E114 Platform Engineering Dinner MEL,Jose,Lee,jose52@gmail.com,Bluegum Health,Risk Manager,0487083172,2026-10-18T17:20:00+11:00,Accepted
+R1131,E101 Sydney Cloud Security Summit,Jose,Brown,jose.brown@kestrel.example,Kestrel Logistics,CTO,0456506098,2026-10-18T12:04:00+11:00,Accepted
+R1049,E101 Sydney Cloud Security Summit,  CHLOE ,Taylor,chloe.taylor@kestrel.example,Kestrel Logistics,Chief Information Security Officer,0435240824,2026-10-18T12:44:00+11:00,Accepted
+R1114,E114 Platform Engineering Dinner MEL,Sarah,Murphy,sarah.murphy@kestrel.example,Kestrel Logistics,GM Technology,0403450541,2026-10-13T19:28:00+11:00,Accepted
+R1072,E101 Sydney Cloud Security Summit,Daniel,Khan,daniel.khan@northwindbank.example,Northwind Bank,IT Director,0495214562,2026-10-26T16:56:00+11:00,Accepted
+R1109,E101 Sydney Cloud Security Summit,Oscar,Brown,oscar.brown@silverline.example,Silverline Super,Head of Data,+61 498 614 341,2026-10-14T18:50:00+11:00,Pending
+R1034,E125 Identity Leaders Roundtable SYD,Luke,Ito,luke.ito@silverline.example,Silverline Super,Security Architect,0468727743,2026-10-25T20:33:00+11:00,Accepted
+R1012,E101 Sydney Cloud Security Summit,Arjun,Nguyen,arjun.nguyen@paperbark.example,Paperbark Media,Chief Information Security Officer,0483930103,2026-10-11T09:32:00+11:00,Accepted
+R1260,E125 Identity Leaders Roundtable SYD,Ben,Brown,BEN.BROWN@KESTREL.EXAMPLE,Kestrel Logistics,Chief Information Security Officer,0477109324,2026-10-18T14:05:00+11:00,Accepted
+R1030,E125 Identity Leaders Roundtable SYD,Luke,Lopez,luke.lopez@kestrel.example,Kestrel Logistics,CTO,0468044369,2026-10-15T15:28:00+11:00,Accepted
+R1047,E114 Platform Engineering Dinner MEL,Daniel,Santos,daniel.santos@paperbark.example,Paperbark Media,Head of Infrastructure,457885685,2026-10-09T12:16:00+11:00,Accepted
+R1016,E125 Identity Leaders Roundtable SYD,Oscar,Garcia,oscar.garcia@northwindbank.example,Northwind Bank,Risk Manager,0426064746,2026-10-22T19:31:00+11:00,Accepted
+R1105,E114 Platform Engineering Dinner MEL,Ruby,Clarke,ruby.clarke@coastline.example,Coastline Energy,Risk Manager,0447359774,2026-10-17T14:10:00+11:00,Accepted
+R1080,E114 Platform Engineering Dinner MEL,Lucas,Santos,lucas.santos@northwindbank.example,Northwind Bank,Chief Information Security Officer,420539502,2026-10-05T19:26:00+11:00,Cancelled
+R1118,E125 Identity Leaders Roundtable SYD,Wei,Garcia,wei.garcia@paperbark.example,Paperbark Media,IT Director,0409275571,2026-10-17T13:25:00+11:00,Accepted
+R1063,E101 Sydney Cloud Security Summit,Jack,Khan,jack.khan@silverline.example,Silverline Super,Head of Data,0475588675,2026-10-19T14:14:00+11:00,Accepted
+R1113,E101 Sydney Cloud Security Summit,Omar,Cruz,omar.cruz@ironbark.example,Ironbark Mining,Chief Information Security Officer,422170430,2026-10-11T12:32:00+11:00,Accepted
+R1074,E125 Identity Leaders Roundtable SYD,Ben,Kim,ben.kim@harbourins.example,Harbour Insurance,GM Technology,0460481754,2026-10-27T18:23:00+11:00,Accepted
+R1065,E125 Identity Leaders Roundtable SYD,Olivia,Ito,olivia.ito@bluegumhealth.example,Bluegum Health,Head of Security Operations,0462174596,2026-10-11T18:54:00+11:00,Cancelled
+R1005,E125 Identity Leaders Roundtable SYD,Ruby,Santos,ruby.santos@outlook.com,Summit Retail Group,CTO,+61 403 056 413,2026-10-07T18:31:00+11:00,Accepted
+R1133,E114 Platform Engineering Dinner MEL,Kate,Wong,kate.wong@auroratel.example,Aurora Telecom,IT Director,0480002578,2026-10-20T16:08:00+11:00,Accepted
+R1018,E125 Identity Leaders Roundtable SYD,Ethan,Wilson,ethan.wilson@harbourins.example,Harbour Insurance,Chief Information Security Officer,+61 491 361 939,2026-10-20T09:26:00+11:00,Pending
+R1073,E101 Sydney Cloud Security Summit,Tom,Wong,tom.wong@kestrel.example,Kestrel Logistics,Head of Data,0424745171,2026-10-22T19:43:00+11:00,Accepted
+R1050,E114 Platform Engineering Dinner MEL,Rohan,Patel,rohan.patel@northwindbank.example,Northwind Bank,Head of Infrastructure,0494777520,2026-10-04T09:25:00+11:00,Accepted
+R1101,E125 Identity Leaders Roundtable SYD,Ava,Walker,,Harbour Insurance,IT Director,0486449251,2026-10-12T12:41:00+11:00,Accepted
+R1015,E101 Sydney Cloud Security Summit,Leo,Martin,leo.martin@ironbark.example,Ironbark Mining,Head of Data,0431781080,2026-10-06T14:31:00+11:00,Accepted
+R1091,E101 Sydney Cloud Security Summit,Emily,Santos,emily.santos@paperbark.example,Paperbark Media,Head of Data,478403690,2026-10-10T11:49:00+11:00,Accepted
+R1083,E125 Identity Leaders Roundtable SYD,James,Tran,james.tran@paperbark,Paperbark Media,GM Technology,+61 485 698 478,2026-10-04T20:44:00+11:00,Accepted
+R1110,E114 Platform Engineering Dinner MEL,Omar,Chen,omar.chen@harbourins.example,Harbour Insurance,GM Technology,0479808932,2026-10-01T17:22:00+11:00,Accepted
+R1044,E114 Platform Engineering Dinner MEL,Luke,Clarke,luke.clarke@ironbark.example,Ironbark Mining,Head of Data,+61 476 945 314,2026-10-25T15:36:00+11:00,Pending
+R1127,E125 Identity Leaders Roundtable SYD,Isla,Khan,isla.khan@auroratel.example,Aurora Telecom,CTO,0477359255,2026-10-13T10:48:00+11:00,Accepted
+R1100,E125 Identity Leaders Roundtable SYD,Fatima,Wong,fatima.wong@silverline.example,Silverline Super,Head of Platform Engineering,0492554665,2026-10-02T20:40:00+11:00,Accepted
+R1132,E114 Platform Engineering Dinner MEL,Lily,Khan,lily.khan@silverline.example,Silverline Super,Risk Manager,0449912165,2026-10-12T20:09:00+11:00,Accepted
+R1107,E114 Platform Engineering Dinner MEL,Jack,Rossi,jack.rossi@harbourins.example,Harbour Insurance,Head of Data,0437506068,2026-10-13T09:23:00+11:00,Accepted
+R1036,E114 Platform Engineering Dinner MEL,Oscar,Chen,oscar.chen[at]auroratel.example,Aurora Telecom,Head of Platform Engineering,465876036,2026-10-23T08:54:00+11:00,Pending
+R1081,E101 Sydney Cloud Security Summit,Lucas,Ito,lucas.ito@harbourins.example,Harbour Insurance,Head of Platform Engineering,0477589178,2026-10-02T19:50:00+11:00,Cancelled
+R1130,E125 Identity Leaders Roundtable SYD,  LILY ,Khan,lily.khan@coastline.example,Coastline Energy,Head of Infrastructure,0439500479,2026-10-10T16:00:00+11:00,Accepted
+R1038,E125 Identity Leaders Roundtable SYD,Hana,Walker,hana.walker@auroratel.example,Aurora Telecom,Chief Information Security Officer,0427298069,2026-10-03T18:27:00+11:00,Accepted
+R1390,E101 Sydney Cloud Security Summit,Noah,Santos,noah24@gmail.com,Harbour Insurance,Risk Manager,0447679764,2026-10-04T13:27:00+11:00,Accepted
+R1035,E101 Sydney Cloud Security Summit,Henry,Martin,henry.martin@ironbark.example,Ironbark Mining,IT Director,0414345581,2026-10-08T14:44:00+11:00,Accepted
+R1031,E101 Sydney Cloud Security Summit,  LILY ,Murphy,lily.murphy@bluegumhealth.example,Bluegum Health,Head of Data,+61 414 895 134,2026-10-05T08:02:00+11:00,Accepted
+R1024,E114 Platform Engineering Dinner MEL,Grace,Smith,grace.smith@kestrel.example,Kestrel Logistics,Head of Platform Engineering,0450533158,2026-10-24T10:59:00+11:00,Accepted
+R1103,E125 Identity Leaders Roundtable SYD,  OSCAR ,Walker,oscar.walker@ironbark.example,Ironbark Mining,Risk Manager,0433221418,2026-10-02T18:21:00+11:00,Pending
+R1117,E101 Sydney Cloud Security Summit,Ava,Santos,ava.santos@auroratel.example,Aurora Telecom,Head of Security Operations,0458202970,2026-10-08T20:41:00+11:00,Accepted
+R1033,E114 Platform Engineering Dinner MEL,Jose,Lee,jose.lee@bluegumhealth.example,Bluegum Health,Risk Manager,0487083172,2026-10-18T17:20:00+11:00,Accepted
+R1240,E101 Sydney Cloud Security Summit,  SARAH ,Smith,SARAH.SMITH@SUMMITRETAIL.EXAMPLE,Summit Retail Group,Head of Data,0431003309,2026-10-05T15:42:00+11:00,Accepted
+R1082,E101 Sydney Cloud Security Summit,Daniel,Khan,daniel.khan@northwindbank.example,Northwind Bank,CTO,0407661771,2026-10-20T10:04:00+11:00,Accepted
+R1087,E125 Identity Leaders Roundtable SYD,Chloe,Kim,chloe.kim[at]silverline.example,Silverline Super,Risk Manager,0451493689,2026-10-01T17:59:00+11:00,Accepted
+R1092,E125 Identity Leaders Roundtable SYD,Sofia,Singh,sofia.singh@summitretail.example,Summit Retail Group,Head of Data,0410762268,2026-10-17T16:53:00+11:00,Accepted
+R1086,E125 Identity Leaders Roundtable SYD,Lucas,Rossi,lucas.rossi@summitretail.example,Summit Retail Group,Head of Data,0460494519,2026-10-05T18:30:00+11:00,Accepted
+R1045,E114 Platform Engineering Dinner MEL,Hana,Walker,hana.walker@northwindbank,Northwind Bank,Head of Platform Engineering,0475273545,2026-10-23T12:35:00+11:00,Accepted
+R1069,E114 Platform Engineering Dinner MEL,Omar,Singh,omar.singh@silverline.example,Silverline Super,Security Architect,421759464,2026-10-07T14:54:00+11:00,Accepted
+R1225,E114 Platform Engineering Dinner MEL,Isla,Wilson,isla.wilson@auroratel.example,Aurora Telecom,Chief Information Security Officer,402563421,2026-10-16T11:12:00+11:00,Accepted
+R1068,E114 Platform Engineering Dinner MEL,Isla,Wilson,isla.wilson@harbourins.example,Harbour Insurance,Security Architect,0496937923,2026-10-15T12:42:00+11:00,Accepted
+R1280,E114 Platform Engineering Dinner MEL,Lucas,Santos,LUCAS.SANTOS@NORTHWINDBANK.EXAMPLE,Northwind Bank,Chief Information Security Officer,420539502,2026-10-05T19:26:00+11:00,Cancelled
+R1022,E114 Platform Engineering Dinner MEL,  OSCAR ,Cruz,oscar.cruz@summitretail.example,Summit Retail Group,Chief Information Security Officer,0434874016,2026-10-01T13:49:00+11:00,Accepted
+R1126,E101 Sydney Cloud Security Summit,Oscar,Silva,oscar.silva@paperbark.example,Paperbark Media,GM Technology,0469078447,2026-10-10T15:04:00+11:00,Accepted
+R1129,E114 Platform Engineering Dinner MEL,Maria,Lee,maria.lee@bluegumhealth.example,Bluegum Health,Security Architect,0459532787,2026-10-16T08:05:00+11:00,Accepted
+R1300,E125 Identity Leaders Roundtable SYD,Fatima,Wong,FATIMA.WONG@SILVERLINE.EXAMPLE,Silverline Super,Head of Platform Engineering,0492554665,2026-10-02T20:40:00+11:00,Accepted
+R1061,E101 Sydney Cloud Security Summit,Lucas,Khan,lucas.khan@harbourins.example,Harbour Insurance,Head of Infrastructure,0427484677,2026-10-18T10:24:00+11:00,Accepted
+R1084,E125 Identity Leaders Roundtable SYD,Ben,Ito,ben.ito@coastline.example,Coastline Energy,Head of Security Operations,0467365766,2026-10-11T14:20:00+11:00,Accepted
+R1041,E101 Sydney Cloud Security Summit,Nina,Taylor,nina.taylor@ironbark.example,Ironbark Mining,Head of Platform Engineering,0445299124,2026-10-01T12:36:00+11:00,Accepted
+R1071,E125 Identity Leaders Roundtable SYD,Kate,Ito,kate.ito@ironbark.example,Ironbark Mining,IT Director,0443953394,2026-10-21T09:57:00+11:00,Accepted
+R1312,E101 Sydney Cloud Security Summit,Arjun,Nguyen,arjun57@gmail.com,Paperbark Media,Chief Information Security Officer,0483930103,2026-10-11T09:32:00+11:00,Accepted
+R1066,E114 Platform Engineering Dinner MEL,Hana,Walker,hana.walker@ironbark.example,Ironbark Mining,Head of Security Operations,0480913431,2026-10-25T18:45:00+11:00,Accepted
+R1017,E114 Platform Engineering Dinner MEL,Zoe,Singh,zoe.singh@coastline.example,Coastline Energy,Risk Manager,0409805009,2026-10-17T10:03:00+11:00,Cancelled
+R1090,E101 Sydney Cloud Security Summit,Noah,Santos,noah.santos@harbourins.example,Harbour Insurance,Risk Manager,0447679764,2026-10-04T13:27:00+11:00,Accepted
+R1007,E125 Identity Leaders Roundtable SYD,Ethan,Silva,ethan.silva@northwindbank,Northwind Bank,Head of Infrastructure,0412269166,2026-10-17T12:35:00+11:00,Accepted
+R1093,E114 Platform Engineering Dinner MEL,Ava,Garcia,ava.garcia@northwindbank.example,Northwind Bank,GM Technology,0460715969,2026-10-10T09:25:00+11:00,Accepted
+R1094,E114 Platform Engineering Dinner MEL,  PRIYA ,Wilson,priya.wilson@paperbark.example,Paperbark Media,Risk Manager,0475161369,2026-10-03T14:55:00+11:00,Accepted
+R1108,E114 Platform Engineering Dinner MEL,Liam,Walker,liam.walker@harbourins.example,Harbour Insurance,Head of Platform Engineering,0452204727,2026-10-01T09:01:00+11:00,Accepted
+R1111,E125 Identity Leaders Roundtable SYD,Nina,Rossi,nina.rossi@bluegumhealth.example,Bluegum Health,Chief Information Security Officer,0418518888,2026-10-13T15:02:00+11:00,Accepted
+R1060,E125 Identity Leaders Roundtable SYD,Ben,Brown,ben.brown@kestrel.example,Kestrel Logistics,Chief Information Security Officer,0477109324,2026-10-18T14:05:00+11:00,Accepted
+R1357,E125 Identity Leaders Roundtable SYD,James,Lopez,james96@gmail.com,Northwind Bank,Head of Infrastructure,+61 427 874 296,2026-10-03T15:22:00+11:00,Accepted
+R1099,E125 Identity Leaders Roundtable SYD,Priya,Tran,priya.tran@ironbark.example,Ironbark Mining,IT Director,0482071518,2026-10-02T11:45:00+11:00,Accepted
+R1064,E114 Platform Engineering Dinner MEL,Mia,Walker,mia.walker@ironbark,Ironbark Mining,Head of Security Operations,0466270289,2026-10-15T09:33:00+11:00,Accepted
+R1123,E101 Sydney Cloud Security Summit,Omar,Santos,omar.santos@silverline.example,Silverline Super,Head of Security Operations,0452892268,2026-10-17T10:19:00+11:00,Accepted
+R1026,E114 Platform Engineering Dinner MEL,Mei,Singh,mei.singh@coastline,Coastline Energy,Risk Manager,0430365414,2026-10-13T18:53:00+11:00,Cancelled
+R1088,E101 Sydney Cloud Security Summit,Liam,Wilson,liam.wilson@kestrel.example,Kestrel Logistics,IT Director,0445502296,2026-10-24T18:01:00+11:00,Accepted
+R1052,E125 Identity Leaders Roundtable SYD,Tom,Garcia,tom.garcia@ironbark.example,Ironbark Mining,Head of Security Operations,0474964990,2026-10-25T11:40:00+11:00,Accepted
+R1019,E114 Platform Engineering Dinner MEL,Nina,Wong,nina.wong[at]summitretail.example,Summit Retail Group,CTO,0443534624,2026-10-25T09:00:00+11:00,Accepted
+R1053,E114 Platform Engineering Dinner MEL,Sofia,Santos,sofia.santos[at]harbourins.example,Harbour Insurance,Head of Platform Engineering,0423281206,2026-10-16T12:02:00+11:00,Accepted
+R1040,E101 Sydney Cloud Security Summit,  SARAH ,Smith,sarah.smith@summitretail.example,Summit Retail Group,Head of Data,0431003309,2026-10-05T15:42:00+11:00,Accepted
+R1112,E101 Sydney Cloud Security Summit,  WEI ,Martin,wei.martin@northwindbank.example,Northwind Bank,CTO,0451531952,2026-10-18T13:52:00+11:00,Accepted
+R1004,E114 Platform Engineering Dinner MEL,  ISLA ,Kim,isla.kim@summitretail.example,Summit Retail Group,GM Technology,0434192832,2026-10-09T18:44:00+11:00,Cancelled
+R1048,E125 Identity Leaders Roundtable SYD,Lucas,Ito,lucas.ito@coastline.example,Coastline Energy,Head of Platform Engineering,0451823374,2026-10-25T16:38:00+11:00,Accepted
+R1028,E114 Platform Engineering Dinner MEL,Hana,Lopez,hana.lopez@coastline.example,Coastline Energy,Head of Security Operations,0440608835,2026-10-22T13:39:00+11:00,Accepted
+R1008,E125 Identity Leaders Roundtable SYD,Lucas,Santos,lucas.santos@silverline.example,Silverline Super,Security Architect,0445146270,2026-10-17T20:11:00+11:00,Cancelled
+R1062,E125 Identity Leaders Roundtable SYD,Kate,Wong,kate.wong@bluegumhealth.example,Bluegum Health,Security Architect,0414658404,2026-10-27T17:37:00+11:00,Accepted
+R1037,E114 Platform Engineering Dinner MEL,Hana,Murphy,hana.murphy@northwindbank.example,Northwind Bank,Head of Data,0454668893,2026-10-09T14:31:00+11:00,Accepted
+R1097,E125 Identity Leaders Roundtable SYD,Priya,Brown,priya.brown@ironbark.example,Ironbark Mining,Head of Security Operations,0417744905,2026-10-10T15:28:00+11:00,Accepted
+R1134,E114 Platform Engineering Dinner MEL,Luke,Walker,luke.walker@bluegumhealth.example,Bluegum Health,Head of Platform Engineering,0469495888,2026-10-10T15:52:00+11:00,Accepted
+R1043,E114 Platform Engineering Dinner MEL,Ava,Wong,ava.wong@summitretail.example,Summit Retail Group,IT Director,0406716572,2026-10-24T16:41:00+11:00,Accepted
+R1122,E101 Sydney Cloud Security Summit,Grace,Tran,grace.tran@harbourins.example,Harbour Insurance,IT Director,+61 414 678 669,2026-10-11T18:04:00+11:00,Accepted
+R1013,E114 Platform Engineering Dinner MEL,  JAMES ,Santos,james.santos@ironbark.example,Ironbark Mining,Head of Data,0438299737,2026-10-04T09:42:00+11:00,Accepted
+R1058,E114 Platform Engineering Dinner MEL,  ARJUN ,Walker,arjun.walker@harbourins.example,Harbour Insurance,Head of Security Operations,425674680,2026-10-11T12:20:00+11:00,Accepted
+R1067,E101 Sydney Cloud Security Summit,  FATIMA ,Wilson,fatima.wilson@kestrel.example,Kestrel Logistics,Head of Data,0400504556,2026-10-17T14:36:00+11:00,Accepted
+R1121,E125 Identity Leaders Roundtable SYD,  LEO ,Kim,leo.kim[at]silverline.example,Silverline Super,Head of Platform Engineering,0431323705,2026-10-12T15:51:00+11:00,Cancelled
+R1006,E114 Platform Engineering Dinner MEL,Omar,Brown,omar.brown@kestrel.example,Kestrel Logistics,CTO,0423884969,2026-10-08T10:32:00+11:00,Accepted
+R1078,E114 Platform Engineering Dinner MEL,Noah,Garcia,,Kestrel Logistics,Head of Data,0431713900,2026-10-05T20:36:00+11:00,Accepted
+R1106,E101 Sydney Cloud Security Summit,Kate,Brown,kate.brown@kestrel.example,Kestrel Logistics,IT Director,0407581814,2026-10-09T15:57:00+11:00,Cancelled
