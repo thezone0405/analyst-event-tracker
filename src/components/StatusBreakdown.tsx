@@ -16,9 +16,9 @@ export function StatusBreakdown({ counts }: StatusBreakdownProps) {
     <dl className="grid grid-cols-3 gap-2" aria-label="Registration status breakdown">
       {REGISTRATION_STATUSES.map((status) => (
         <div key={status} className={`rounded-md px-2 py-1 text-center ${STATUS_STYLES[status]}`}>
-          <dt className="text-xs font-medium uppercase tracking-wide">{status}</dt>
-          <dd className="text-lg font-semibold" data-testid={`status-${status}`}>
-            {counts[status]}
+          <dt className="sr-only">{status}</dt>
+          <dd className="text-sm font-semibold" data-testid={`status-${status}`}>
+            {counts[status]} {status}
           </dd>
         </div>
       ))}

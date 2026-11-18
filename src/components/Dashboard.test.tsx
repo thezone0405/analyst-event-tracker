@@ -46,6 +46,35 @@ describe('Dashboard', () => {
   })
 })
 
+describe('Dashboard KPI cards and ordering', () => {
+  it('shows the four KPI cards and puts attention events first', () => {
+    const evs = [
+      makeEvent({ event_id: 'E150', date: '2027-02-24', target_registrations: 300, current_registrations: 40 }),
+      makeEvent({ event_id: 'E114', date: '2026-11-10', target_registrations: 45, current_registrations: 46 }),
+      makeEvent({ event_id: 'E130', date: '2026-11-19', target_registrations: 25, current_registrations: 4 }),
+    ]
+    const regs = [
+      makeRegistration({ registrationId: 'P1', eventId: 'E130', status: 'Pending', mobile: '0411' }),
+      makeRegistration({ registrationId: 'A1', eventId: 'E130', status: 'Accepted', mobile: '0422' }),
+    ]
+    render(<Dashboard events={evs} registrations={regs} today="2026-11-16" />)
+
+    expect(screen.getByText('Upcoming Confirmed Seats')).toBeInTheDocument()
+    expect(screen.getByText('Events Needing Attention')).toBeInTheDocument()
+    expect(screen.getByText('Pending Review (CSV)')).toBeInTheDocument()
+    expect(screen.getByText('Data Hygiene (Duplicates)')).toBeInTheDocument()
+    expect(screen.getByTestId('kpi-value-upcomingConfirmedSeats')).toHaveTextContent('41')
+    expect(screen.getByTestId('kpi-value-eventsNeedingAttention')).toHaveTextContent('1')
+    expect(screen.getByTestId('kpi-value-pendingReview')).toHaveTextContent('1')
+    expect(screen.getByTestId('kpi-value-duplicates')).toHaveTextContent('0')
+
+    const order = screen
+      .getAllByTestId(/^event-card-/)
+      .map((el) => el.getAttribute('data-testid'))
+    expect(order[0]).toBe('event-card-E130')
+  })
+})
+
 describe('Dashboard action required banner', () => {
   it('lists urgent events and excludes completed ones', () => {
     const evs = [

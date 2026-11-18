@@ -1,6 +1,6 @@
 import type { AttentionBadge, AttentionResult } from '../services/attention'
 import type { EventSummary, SummarySource } from '../types'
-import { BREAKDOWN_UNAVAILABLE_TEXT, NO_DATA_TEXT } from './copy'
+import { BREAKDOWN_UNAVAILABLE_TEXT, NO_DATA_TEXT, daysRemainingText, gapText } from './copy'
 import { ProgressBar } from './ProgressBar'
 import { StatusBreakdown } from './StatusBreakdown'
 
@@ -75,6 +75,11 @@ export function EventCard({ summary, attention }: EventCardProps) {
           <p className="text-sm text-slate-600">
             {event.city} · {event.date}
           </p>
+          {attention && (
+            <p className="text-sm font-medium text-slate-700" data-testid="days-remaining">
+              {daysRemainingText(attention.daysRemaining)}
+            </p>
+          )}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
@@ -97,6 +102,10 @@ export function EventCard({ summary, attention }: EventCardProps) {
         percent={percent}
         label={`${event.event_id} confirmed registrations`}
       />
+
+      <p className="text-sm font-medium text-slate-800" data-testid="gap-text">
+        {gapText(confirmed, target)}
+      </p>
 
       <StatusDetail summary={summary} />
 

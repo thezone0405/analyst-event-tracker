@@ -38,7 +38,7 @@ export function ProgressBar({ value, max, percent, label }: ProgressBarProps) {
         className={progressClassName(value, max)}
       />
       <p className="text-sm text-slate-600" data-testid="progress-text">
-        {value} of {max} ({percent}%)
+        {value} of {max} target ({percent}%)
       </p>
     </div>
   )

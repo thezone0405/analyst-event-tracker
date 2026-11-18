@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import { prioritize, todayIso } from '../services/attention'
 import { reconcile } from '../services/reconcile'
+import { computeKpis } from '../services/kpis'
 import type { EventRecord, Registration } from '../types'
 import { EventCard } from './EventCard'
+import { KpiCards } from './KpiCards'
 
 export interface DashboardProps {
   events: EventRecord[]
@@ -21,9 +23,14 @@ export function Dashboard({ events, registrations, today = todayIso() }: Dashboa
 
   const prioritized = useMemo(() => prioritize(result.summaries, today), [result.summaries, today])
   const urgent = prioritized.filter((item) => item.attention.needsAttention)
+  const kpis = useMemo(
+    () => computeKpis(prioritized, result.duplicateCount),
+    [prioritized, result.duplicateCount],
+  )
 
   return (
     <div className="flex flex-col gap-6">
+      <KpiCards kpis={kpis} />
       <section
         aria-label="Ingestion summary"
         className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4"
