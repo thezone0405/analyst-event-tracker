@@ -301,7 +301,7 @@ function main() {
         "cleaner",
         specPath,
         "CRAP4TS Analysis",
-        "npx crap4ts --threshold 15",
+        "npx crap4ts --threshold 7 --coverage coverage/coverage-final.json",
         "npx vitest run --coverage",
       )
     ) {
