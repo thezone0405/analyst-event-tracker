@@ -3,7 +3,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 
-const MAX_RETRIES = 7;
+const MAX_RETRIES = 25;
 
 interface AgentConfig {
   role: string;
