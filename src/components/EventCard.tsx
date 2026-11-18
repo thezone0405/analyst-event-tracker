@@ -27,6 +27,24 @@ function StatusDetail({ summary }: EventCardProps) {
   )
 }
 
+interface DuplicateNoteProps {
+  count: number
+}
+
+function pluralizeSubmission(count: number): string {
+  return count === 1 ? 'submission' : 'submissions'
+}
+
+/** Notes how many duplicate submissions were filtered; renders nothing when there were none. */
+function DuplicateNote({ count }: DuplicateNoteProps) {
+  if (count <= 0) return null
+  return (
+    <p className="text-xs text-slate-500">
+      {count} duplicate {pluralizeSubmission(count)} filtered
+    </p>
+  )
+}
+
 /** Summary card for one scheduled event. */
 export function EventCard({ summary }: EventCardProps) {
   const { event, source, confirmed, target, percent, duplicatesFiltered } = summary
@@ -62,12 +80,7 @@ export function EventCard({ summary }: EventCardProps) {
 
       <StatusDetail summary={summary} />
 
-      {duplicatesFiltered > 0 && (
-        <p className="text-xs text-slate-500">
-          {duplicatesFiltered} duplicate {duplicatesFiltered === 1 ? 'submission' : 'submissions'}{' '}
-          filtered
-        </p>
-      )}
+      <DuplicateNote count={duplicatesFiltered} />
     </article>
   )
 }

@@ -6,10 +6,10 @@ export interface DataSources {
   registrationsUrl: string
 }
 
-/** Files live in `public/data/` and are served from the site root by Vite/Vercel. */
+/** Files live in `public/` and are served from the site root by Vite/Vercel. */
 export const DEFAULT_DATA_SOURCES: DataSources = {
-  eventsUrl: '/data/events.json',
-  registrationsUrl: '/data/registrations.csv',
+  eventsUrl: '/events.json',
+  registrationsUrl: '/registrations.csv',
 }
 
 export type Fetcher = (url: string) => Promise<Response>

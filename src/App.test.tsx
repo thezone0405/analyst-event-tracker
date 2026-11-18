@@ -26,8 +26,8 @@ function fetcherFor(responses: Record<string, Response>): Fetcher {
 describe('App', () => {
   it('loads the schedule and export, then renders event cards', async () => {
     const fetcher = fetcherFor({
-      '/data/events.json': new Response(EVENTS_JSON),
-      '/data/registrations.csv': new Response(CSV_HEADER),
+      '/events.json': new Response(EVENTS_JSON),
+      '/registrations.csv': new Response(CSV_HEADER),
     })
     render(<App fetcher={fetcher} />)
 
@@ -37,11 +37,11 @@ describe('App', () => {
   })
 
   it('shows an error when a data file fails to load', async () => {
-    const fetcher = fetcherFor({ '/data/events.json': new Response(EVENTS_JSON) })
+    const fetcher = fetcherFor({ '/events.json': new Response(EVENTS_JSON) })
     render(<App fetcher={fetcher} />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Failed to load /data/registrations.csv (HTTP 404)',
+      'Failed to load /registrations.csv (HTTP 404)',
     )
   })
 })

@@ -104,13 +104,18 @@ export function reconcile(
   const summaries = events.map((event) =>
     summarizeEvent(
       event,
-      liveByEvent.get(event.event_id) ?? [],
-      duplicatesByEvent.get(event.event_id)?.length ?? 0,
+      rowsFor(liveByEvent, event.event_id),
+      rowsFor(duplicatesByEvent, event.event_id).length,
     ),
   )
   const unmatchedRows = kept.filter((registration) => !isScheduled(registration, knownIds))
 
   return { summaries, duplicateCount: duplicates.length, unmatchedRows }
+}
+
+/** Rows grouped under `eventId`, or an empty list when the event has none. */
+function rowsFor(groups: ReadonlyMap<string, Registration[]>, eventId: string): Registration[] {
+  return groups.get(eventId) ?? []
 }
 
 function applyDedupe(registrations: readonly Registration[], active: boolean): DedupeResult {
