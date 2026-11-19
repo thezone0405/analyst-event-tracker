@@ -91,7 +91,9 @@ export function useDashboardData(
   }, [fetcher, intervalMs, polling])
 
   const uploadCsv = useCallback(async (file: File) => {
-    const registrations = await readRegistrations(file)
+    const parsed = await readRegistrations(file)
+    // A row only counts as a registration if it references an event ID.
+    const registrations = parsed.filter((registration) => registration.eventId !== null)
     if (registrations.length === 0) {
       setNotice(EMPTY_UPLOAD_MESSAGE)
       return
