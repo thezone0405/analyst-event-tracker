@@ -49,13 +49,13 @@ Before building anything, I audited the two data files, `public/events.json` (th
 
 ### B. Rules I chose
 
-| Decision | Rule | Why |
-| --- | --- | --- |
-| **Which file wins** | If an event has rows in `registrations.csv`, those live rows are used. Otherwise the tracker falls back to the nightly total in `events.json`. | `events.json` is last night's count. The CSV is the live export. |
-| **What counts toward the target** | Only **Accepted** registrations count. **Pending** is shown separately as possible extra seats. **Cancelled** is not counted. | Venue planning needs the confirmed headcount. Pending sign-ups still need someone to approve them. |
-| **Missing breakdowns** | For events with only a nightly total, the card says the breakdown is unavailable and shows the nightly count. It never shows `0 Pending` or `0 Cancelled`. | Showing `0` when there's no data would make coordinators think there are no cancellations or pending approvals. |
-| **Duplicates** | Rows with the same event, name, mobile number (in a standard format) and timestamp are counted once, by default. A switch on the dashboard shows the raw count instead. | Stops double-clicks from inflating seat numbers, without hiding the underlying data problem. |
-| **Any number of events** | Every count, card and alert works through whatever events are in the data files. No event IDs are hard-coded. | Events come and go all the time. |
+| Decision                          | Rule                                                                                                                                                                    | Why                                                                                                             |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Which file wins**               | If an event has rows in `registrations.csv`, those live rows are used. Otherwise the tracker falls back to the nightly total in `events.json`.                          | `events.json` is last night's count. The CSV is the live export.                                                |
+| **What counts toward the target** | Only **Accepted** registrations count. **Pending** is shown separately as possible extra seats. **Cancelled** is not counted.                                           | Venue planning needs the confirmed headcount. Pending sign-ups still need someone to approve them.              |
+| **Missing breakdowns**            | For events with only a nightly total, the card says the breakdown is unavailable and shows the nightly count. It never shows `0 Pending` or `0 Cancelled`.              | Showing `0` when there's no data would make coordinators think there are no cancellations or pending approvals. |
+| **Duplicates**                    | Rows with the same event, name, mobile number (in a standard format) and timestamp are counted once, by default. A switch on the dashboard shows the raw count instead. | Stops double-clicks from inflating seat numbers, without hiding the underlying data problem.                    |
+| **Any number of events**          | Every count, card and alert works through whatever events are in the data files. No event IDs are hard-coded.                                                           | Events come and go all the time.                                                                                |
 
 ---
 
@@ -63,27 +63,27 @@ Before building anything, I audited the two data files, `public/events.json` (th
 
 Every feature traces back to a written specification in `specs/features/`. Each spec is a plain-English description of how the feature should behave (the "Gherkin" format). The specs were written by a person, and the AI agents are not allowed to change them.
 
-| Spec file | What it covers |
-| --- | --- |
-| `data_ingest_deduplicate_reconcile.feature` | Reading both files, removing duplicates, choosing which file wins |
-| `target_progress_needs_attention.feature` | Progress against target and the "Needs Attention" labels |
-| `non_technical_live_dashboard_experience.feature` | A dashboard layout that non-technical staff can read at a glance |
-| `live_auto_sync_with_coordinator_control.feature` | Auto-refresh, manual CSV upload and filter tabs |
-| `automated_weekday_morning_digest.feature` | The weekday morning Slack summary |
+| Spec file                                         | What it covers                                                    |
+| ------------------------------------------------- | ----------------------------------------------------------------- |
+| `data_ingest_deduplicate_reconcile.feature`       | Reading both files, removing duplicates, choosing which file wins |
+| `target_progress_needs_attention.feature`         | Progress against target and the "Needs Attention" labels          |
+| `non_technical_live_dashboard_experience.feature` | A dashboard layout that non-technical staff can read at a glance  |
+| `live_auto_sync_with_coordinator_control.feature` | Auto-refresh, manual CSV upload and filter tabs                   |
+| `automated_weekday_morning_digest.feature`        | The weekday morning Slack summary                                 |
 
 ### Core: reconciling the data and flagging events
 
-- **Matching event IDs:** the `E###` code at the start of each CSV `event` value is pulled out and matched to `events.json`. Rows are counted by status. When an event has no live rows, the nightly total is used. If that is also missing (`null`), the event shows **0** with a *"No registration data reported"* label.
+- **Matching event IDs:** the `E###` code at the start of each CSV `event` value is pulled out and matched to `events.json`. Rows are counted by status. When an event has no live rows, the nightly total is used. If that is also missing (`null`), the event shows **0** with a _"No registration data reported"_ label.
 - **Removing duplicates:** names are compared ignoring capitalisation and extra spaces. Australian mobile numbers are converted to one format first (`+61 4xx…` and `4xxxxxxxx` both become `04xxxxxxxx`). This removes the 10 duplicate submissions and keeps Daniel Khan's two separate registrations.
 - **Status labels on the dashboard:** each event card gets one label, checked in this order:
 
-  | Label | Colour | Rule |
-  | --- | --- | --- |
-  | **Completed** | Grey | The event date has passed |
-  | **Target Met** | Green | 100% or more of the target is confirmed |
-  | **Needs Attention (Urgent)** | Red | 3 days or fewer away **and** under 70% of target |
-  | **Needs Attention (Behind)** | Orange | 7 days or fewer away, but not Urgent |
-  | **On Track** | Blue | Everything else (more than 7 days away and under target) |
+  | Label                        | Colour | Rule                                                     |
+  | ---------------------------- | ------ | -------------------------------------------------------- |
+  | **Completed**                | Grey   | The event date has passed                                |
+  | **Target Met**               | Green  | 100% or more of the target is confirmed                  |
+  | **Needs Attention (Urgent)** | Red    | 3 days or fewer away **and** under 70% of target         |
+  | **Needs Attention (Behind)** | Orange | 7 days or fewer away, but not Urgent                     |
+  | **On Track**                 | Blue   | Everything else (more than 7 days away and under target) |
 
   On the reference date of 2026-11-16, these rules give:
   - **Urgent:** E130 (16%), E126 (30%) and E101 (60%)
@@ -95,12 +95,12 @@ Every feature traces back to a written specification in `specs/features/`. Each 
 - **Dashboard layout:**
   - Four summary tiles across the top: Upcoming Confirmed Seats, Events Needing Attention, Pending Review and Duplicates.
   - A red **Action Required** box listing every event that needs attention.
-  - Event cards sorted by urgency. Each card has a progress bar (*"36 of 60 target (60%)"*), the exact number of seats still needed, and the status breakdown.
+  - Event cards sorted by urgency. Each card has a progress bar (_"36 of 60 target (60%)"_), the exact number of seats still needed, and the status breakdown.
 
 ### Live updates and coordinator controls
 
-- **Refresh every 60 seconds:** the browser downloads both data files again every 60 seconds. Each request has a unique code added to the web address so the browser can't show an old saved copy. The header shows when the data was *"Last synced"*.
-- **Duplicates switch:** untick *"Remove duplicate submissions"* to compare the cleaned count (**135**) with the raw CSV rows (**145**).
+- **Refresh every 60 seconds:** the browser downloads both data files again every 60 seconds. Each request has a unique code added to the web address so the browser can't show an old saved copy. The header shows when the data was _"Last synced"_.
+- **Duplicates switch:** untick _"Remove duplicate submissions"_ to compare the cleaned count (**135**) with the raw CSV rows (**145**).
 - **Upload New CSV:** a coordinator can pick a freshly downloaded `.csv` file and see the new numbers straight away, in their browser only. Auto-refresh pauses while an uploaded file is on screen, so it isn't overwritten. The header shows the file name.
 - **Filter tabs:** **All Events**, **Needs Attention**, **Live CSV Tracked** and **Completed**.
 
@@ -157,13 +157,13 @@ flowchart LR
     B -.->|build fails| C
 ```
 
-| Stage | The agent's job | The automated check it must pass | The agent may only change | Commands the agent may run |
-| --- | --- | --- | --- | --- |
-| **1. Coder** | Write the feature and its unit tests, and fix defects sent back to it | `npm run gate:coder`: type check, every unit test and a production build | `src/` | `typecheck`, `test:unit`, `gate:coder` |
-| **2. Cleaner** | Simplify code that is complex and poorly tested | `npm run gate:cleaner`: type check, plus every function's CRAP score is 7 or less (`crap4ts`). The score combines how complex a function is with how well it is tested. | `src/` | `typecheck`, `test:unit`, `test:crap`, `gate:cleaner` |
-| **3. Hardener** | Make the tests stricter | `npm run gate:hardener`: type check, plus at least 80% of deliberately planted bugs are caught by the tests (Stryker mutation testing) | Unit test files only | `typecheck`, `test:unit`, `test:mutation`, `gate:hardener` |
-| **4. QA** | Write the acceptance test steps, and report application bugs | `npm run gate:qa`: **every scenario in every spec** passes in a real Chrome browser (Cucumber + Playwright), so it doubles as a regression test | `tests/` (plus its defect report) | `test:bdd`, `gate:qa` |
-| **Final** | (no agent) | `npm run gate:final`: the production website builds cleanly | n/a | n/a |
+| Stage           | The agent's job                                                       | The automated check it must pass                                                                                                                                        | The agent may only change         | Commands the agent may run                                 |
+| --------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | ---------------------------------------------------------- |
+| **1. Coder**    | Write the feature and its unit tests, and fix defects sent back to it | `npm run gate:coder`: type check, every unit test and a production build                                                                                                | `src/`                            | `typecheck`, `test:unit`, `gate:coder`                     |
+| **2. Cleaner**  | Simplify code that is complex and poorly tested                       | `npm run gate:cleaner`: type check, plus every function's CRAP score is 7 or less (`crap4ts`). The score combines how complex a function is with how well it is tested. | `src/`                            | `typecheck`, `test:unit`, `test:crap`, `gate:cleaner`      |
+| **3. Hardener** | Make the tests stricter                                               | `npm run gate:hardener`: type check, plus at least 80% of deliberately planted bugs are caught by the tests (Stryker mutation testing)                                  | Unit test files only              | `typecheck`, `test:unit`, `test:mutation`, `gate:hardener` |
+| **4. QA**       | Write the acceptance test steps, and report application bugs          | `npm run gate:qa`: **every scenario in every spec** passes in a real Chrome browser (Cucumber + Playwright), so it doubles as a regression test                         | `tests/` (plus its defect report) | `test:bdd`, `gate:qa`                                      |
+| **Final**       | (no agent)                                                            | `npm run gate:final`: the production website builds cleanly                                                                                                             | n/a                               | n/a                                                        |
 
 **Every check and every agent command is an npm script in `package.json`.** That gives three guarantees:
 
@@ -207,16 +207,16 @@ The loop is called "deterministic" because **an AI never decides whether its own
 
 ### Constraints and guardrails
 
-| Guardrail | How it is enforced |
-| --- | --- |
-| **The specs can't be changed** | `CLAUDE.md` tells every agent not to touch `specs/features/`. A Claude Code hook (`.claude/hooks/protect-specs.ts`) blocks any edit to a `.feature` file. No agent's allowed area includes specs. As the final safety net, the harness compares the spec's fingerprint at the end of every run, whether it passed or failed, and **undoes any change and fails the run** if the spec was altered. |
-| **Each agent stays in its own area** | Enforced in two ways. **Up front:** each agent is only given permission to edit files in its own area (see the table above). **Afterwards:** after every attempt, the harness compares the folder with how it was before the agent ran. Anything changed outside the agent's area is put back exactly as it was, and the attempt fails with a "boundary violation" message. No agent may change configuration, package files, specs or the harness. |
-| **Agents only get the tools they need** | Every agent gets the same basic set: read, search, edit files and run commands. Web access, helper sub-agents and other tools are switched off. |
-| **Agents can only run their own commands** | The only shell commands an agent may run are its own npm scripts (see the table above). Anything else, such as `npx …`, `git` or `curl`, is refused. Harness agents load only the project's shared settings (`.claude/settings.json`), which contain the safety hooks but no extra permissions. Your personal permissions in `.claude/settings.local.json` or your user settings can't widen what an agent may do. |
-| **Limited effort per attempt** | Each attempt has a turn limit: Coder 15, Cleaner 25, Hardener 12, QA 8. |
-| **Limited attempts** | At most 25 attempts per stage. After that the run stops and reports the failure. |
-| **No finishing with failing tests** | A Claude Code "Stop" hook runs the unit tests whenever an agent tries to finish. If any test fails, the agent isn't allowed to stop. |
-| **Code standards** | TypeScript strict mode. Modular React components with typed props. Tailwind CSS classes only, no inline styles. |
+| Guardrail                                  | How it is enforced                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **The specs can't be changed**             | `CLAUDE.md` tells every agent not to touch `specs/features/`. A Claude Code hook (`.claude/hooks/protect-specs.ts`) blocks any edit to a `.feature` file. No agent's allowed area includes specs. As the final safety net, the harness compares the spec's fingerprint at the end of every run, whether it passed or failed, and **undoes any change and fails the run** if the spec was altered.                                                   |
+| **Each agent stays in its own area**       | Enforced in two ways. **Up front:** each agent is only given permission to edit files in its own area (see the table above). **Afterwards:** after every attempt, the harness compares the folder with how it was before the agent ran. Anything changed outside the agent's area is put back exactly as it was, and the attempt fails with a "boundary violation" message. No agent may change configuration, package files, specs or the harness. |
+| **Agents only get the tools they need**    | Every agent gets the same basic set: read, search, edit files and run commands. Web access, helper sub-agents and other tools are switched off.                                                                                                                                                                                                                                                                                                     |
+| **Agents can only run their own commands** | The only shell commands an agent may run are its own npm scripts (see the table above). Anything else, such as `npx …`, `git` or `curl`, is refused. Harness agents load only the project's shared settings (`.claude/settings.json`), which contain the safety hooks but no extra permissions. Your personal permissions in `.claude/settings.local.json` or your user settings can't widen what an agent may do.                                  |
+| **Limited effort per attempt**             | Each attempt has a turn limit: Coder 15, Cleaner 25, Hardener 12, QA 8.                                                                                                                                                                                                                                                                                                                                                                             |
+| **Limited attempts**                       | At most 25 attempts per stage. After that the run stops and reports the failure.                                                                                                                                                                                                                                                                                                                                                                    |
+| **No finishing with failing tests**        | A Claude Code "Stop" hook runs the unit tests whenever an agent tries to finish. If any test fails, the agent isn't allowed to stop.                                                                                                                                                                                                                                                                                                                |
+| **Code standards**                         | TypeScript strict mode. Modular React components with typed props. Tailwind CSS classes only, no inline styles.                                                                                                                                                                                                                                                                                                                                     |
 
 **What the harness does not catch** (so these still need a person to check):
 
@@ -229,28 +229,28 @@ The loop is called "deterministic" because **an AI never decides whether its own
 
 ## 6. Tests
 
-| Kind of test | What it checks | Tool | Size | Command |
-| --- | --- | --- | --- | --- |
-| **Unit tests** | Each small piece of logic: CSV reading, duplicate removal, mobile number formatting, attention labels, the digest message, components | Vitest | 136 tests in 15 files | `npm run test:unit` |
-| **Acceptance (BDD) / end-to-end tests** | The app behaves as each spec describes. A real Chrome browser drives the running app the way a user would, so these are also the project's end-to-end tests. | Cucumber + Playwright | 28 scenarios across 5 specs | `npm run test:bdd` (or `npm run test:bdd:ci` for CI, which retries once and prints a shorter summary) |
-| **Complexity (CRAP)** | No function is both complex and under-tested (score of 7 or less) | crap4ts + Istanbul coverage | Every function | `npm run test:crap` |
-| **Mutation testing** | The tests actually catch bugs. Small changes are planted in the code, and at least 80% must make a test fail. | Stryker | `src/services/` | `npm run test:mutation` |
-| **Type check** | The whole app type-checks under strict TypeScript | TypeScript | Whole app | `npm run typecheck` |
-| **Production build** | Type check plus a clean production bundle | TypeScript + Vite | Whole app | `npm run build` |
+| Kind of test                            | What it checks                                                                                                                                               | Tool                        | Size                        | Command                                                                                               |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Unit tests**                          | Each small piece of logic: CSV reading, duplicate removal, mobile number formatting, attention labels, the digest message, components                        | Vitest                      | 136 tests in 15 files       | `npm run test:unit`                                                                                   |
+| **Acceptance (BDD) / end-to-end tests** | The app behaves as each spec describes. A real Chrome browser drives the running app the way a user would, so these are also the project's end-to-end tests. | Cucumber + Playwright       | 28 scenarios across 5 specs | `npm run test:bdd` (or `npm run test:bdd:ci` for CI, which retries once and prints a shorter summary) |
+| **Complexity (CRAP)**                   | No function is both complex and under-tested (score of 7 or less)                                                                                            | crap4ts + Istanbul coverage | Every function              | `npm run test:crap`                                                                                   |
+| **Mutation testing**                    | The tests actually catch bugs. Small changes are planted in the code, and at least 80% must make a test fail.                                                | Stryker                     | `src/services/`             | `npm run test:mutation`                                                                               |
+| **Type check**                          | The whole app type-checks under strict TypeScript                                                                                                            | TypeScript                  | Whole app                   | `npm run typecheck`                                                                                   |
+| **Production build**                    | Type check plus a clean production bundle                                                                                                                    | TypeScript + Vite           | Whole app                   | `npm run build`                                                                                       |
 
 ---
 
 ## 7. Failure points and safeguards
 
-| Possible problem | How the code handles it | What can still go wrong |
-| --- | --- | --- |
-| **Duplicate submissions inflate headcount** | Rows with the same event, name, mobile number and timestamp are counted once. | Two submissions minutes apart, or with different phone numbers, are both kept. This is deliberate, so real people like Daniel Khan aren't dropped. |
-| **Bad or missing emails** (`NaN`, `[at]`, missing domain) | Email is not used for counting or duplicate checks, so nobody is dropped because of an email typo. | Email campaigns will still bounce until the registration form validates emails. |
-| **An empty or wrong file is uploaded** | If the uploaded file has no rows with an event ID, a plain-English warning appears and the previous data stays on screen. | Only empty or unrecognisable files are rejected. A file with some valid rows and some broken ones is still loaded. |
-| **The data files can't be fetched during auto-refresh** | A warning appears and the last loaded data stays on screen. | If they can't be fetched on the **first** page load, the page shows an error instead of the dashboard. |
-| **An empty `registrations.csv` is published** | Every event falls back to its nightly total in `events.json`, and the page doesn't crash. | Status breakdowns disappear until a proper CSV is published. |
-| **The CSV has an event ID that isn't in `events.json`** | Those rows are counted in the **Unmatched rows** figure, so they aren't silently lost. | They don't get their own event card or progress bar until the event is added to `events.json`. |
-| **Slack delivery fails** | The digest checks Slack's response and fails (non-zero exit) on an HTTP error or a missing `SLACK_WEBHOOK`, so GitHub Actions marks the run as failed. | It depends on the `SLACK_WEBHOOK` secret being kept up to date in GitHub. |
+| Possible problem                                          | How the code handles it                                                                                                                                | What can still go wrong                                                                                                                            |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Duplicate submissions inflate headcount**               | Rows with the same event, name, mobile number and timestamp are counted once.                                                                          | Two submissions minutes apart, or with different phone numbers, are both kept. This is deliberate, so real people like Daniel Khan aren't dropped. |
+| **Bad or missing emails** (`NaN`, `[at]`, missing domain) | Email is not used for counting or duplicate checks, so nobody is dropped because of an email typo.                                                     | Email campaigns will still bounce until the registration form validates emails.                                                                    |
+| **An empty or wrong file is uploaded**                    | If the uploaded file has no rows with an event ID, a plain-English warning appears and the previous data stays on screen.                              | Only empty or unrecognisable files are rejected. A file with some valid rows and some broken ones is still loaded.                                 |
+| **The data files can't be fetched during auto-refresh**   | A warning appears and the last loaded data stays on screen.                                                                                            | If they can't be fetched on the **first** page load, the page shows an error instead of the dashboard.                                             |
+| **An empty `registrations.csv` is published**             | Every event falls back to its nightly total in `events.json`, and the page doesn't crash.                                                              | Status breakdowns disappear until a proper CSV is published.                                                                                       |
+| **The CSV has an event ID that isn't in `events.json`**   | Those rows are counted in the **Unmatched rows** figure, so they aren't silently lost.                                                                 | They don't get their own event card or progress bar until the event is added to `events.json`.                                                     |
+| **Slack delivery fails**                                  | The digest checks Slack's response and fails (non-zero exit) on an HTTP error or a missing `SLACK_WEBHOOK`, so GitHub Actions marks the run as failed. | It depends on the `SLACK_WEBHOOK` secret being kept up to date in GitHub.                                                                          |
 
 ---
 
@@ -334,18 +334,3 @@ Gaps found while checking this README against the code. Tick them off as they're
 - [ ] **No card for unknown event IDs.** CSV rows for events not in `events.json` are only counted in "Unmatched rows". There's no "Unconfigured Event" card. Add one only if a spec asks for it.
 - [ ] **No end-to-end run of the new harness loop yet.** The scope checks, path-only commits and rework hand-off have been tested on their own (in a throwaway Git repository), but not yet in a full agent run. Check the console output of the next real run.
 - [ ] **`scripts/` isn't type-checked by `tsc -b`.** The editor shows "Cannot find name 'process'" in the harness files because no tsconfig covers `scripts/` with Node types. This doesn't affect running them.
-
-**Resolved**
-
-- [x] **Agent commands are npm scripts, and each agent has proper tools.** Checks are `gate:*` scripts in `package.json`. Each agent may run only its own scripts and gets a fixed set of tools.
-- [x] **Personal permissions leaked into agents.** The broad allow-list in `.claude/settings.json` (`npx vitest *`, `npx stryker *`, …) used to apply to every agent. It now lives in the gitignored `.claude/settings.local.json`, and harness agents load project settings only.
-- [x] **Spec-protection hook.** The file is renamed to `protect-specs.ts` and now matches `.claude/settings.json`.
-- [x] **Dashboard vs. digest rules.** Kept as they are on purpose. Each follows its own spec, and the specs are the source of truth.
-- [x] **Stage commits picked up unrelated changes.** Each stage now commits only the files it changed (`scripts/workspace.ts`). The spec-baseline commit now commits only the spec.
-- [x] **Agents going out of bounds.** Each agent has its own allowed area, enforced up front through permissions and afterwards by reverting any change outside it. Commit `9ccafa1` (Cleaner's Windows coverage-path fix in `vite.config.ts`) is kept, because it's a valid fix. An edit like that would now be blocked.
-- [x] **`npm run typecheck` checked nothing.** It now runs `tsc -b`, and `CLAUDE.md` is updated to match.
-- [x] **QA covered only the current spec.** QA's check now runs every spec as a regression suite. App bugs it finds go back to the Coder, and the full chain runs again.
-- [x] **A failed final build wasn't retried.** It now goes back to the Coder, followed by a full re-check. The Coder's own check now includes a production build, so most build problems are caught earlier.
-- [x] **The spec-integrity check was skipped when a stage failed.** It now runs on every exit.
-- [x] **No `test:e2e` script.** Not needed: `npm run test:bdd` is the end-to-end suite.
-- [x] **Empty `public/data/` folder.** Removed. The data files live directly in `public/`. Remove the empty folder or move the files into it.
