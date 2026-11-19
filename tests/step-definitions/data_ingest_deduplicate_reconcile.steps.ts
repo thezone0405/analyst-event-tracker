@@ -235,7 +235,9 @@ Then(
     assert.equal(summary.confirmed, count)
     assert.equal(summary.target, target)
     assert.equal(summary.percent, pct)
-    assert.match(cardText(cardHtml), new RegExp(`${count} of ${target} \\(${pct}%\\)`))
+    // The live-dashboard spec mandates the "N of M target (P%)" wording, so
+    // accept the optional "target" word rather than the bare "N of M (P%)".
+    assert.match(cardText(cardHtml), new RegExp(`${count} of ${target}(?: target)? \\(${pct}%\\)`))
     assert.match(cardHtml, new RegExp(`<progress[^>]*value="${count}"`))
   },
 )
