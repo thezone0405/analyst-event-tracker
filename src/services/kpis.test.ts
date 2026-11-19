@@ -28,6 +28,21 @@ describe('computeKpis', () => {
     })
   })
 
+  it('counts seats for an event happening today (0 days remaining) but not yesterday (-1)', () => {
+    const today = summarizeEvent(makeEvent({ event_id: 'E200', date: '2026-11-16' }), [
+      makeRegistration({ status: 'Accepted' }),
+      makeRegistration({ status: 'Accepted' }),
+    ])
+    const yesterday = summarizeEvent(makeEvent({ event_id: 'E201', date: '2026-11-15' }), [
+      makeRegistration({ status: 'Accepted' }),
+    ])
+    const items = prioritize([today, yesterday], '2026-11-16')
+
+    expect(items.map(({ attention }) => attention.daysRemaining).sort()).toEqual([-1, 0])
+    expect(computeKpis(items, 0).upcomingConfirmedSeats).toBe(2)
+    expect(computeKpis(items.filter(({ attention }) => attention.daysRemaining === 0), 0).upcomingConfirmedSeats).toBe(2)
+  })
+
   it('returns zeros for no events', () => {
     expect(computeKpis([], 0)).toEqual({
       upcomingConfirmedSeats: 0,
