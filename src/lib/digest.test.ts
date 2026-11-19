@@ -39,7 +39,7 @@ describe('runDigest', () => {
     const deps = makeDeps()
     expect(await runDigest(deps)).toBe(0)
     expect(deps.post).toHaveBeenCalledTimes(1)
-    const [url, init] = deps.post.mock.calls[0] as unknown as [string, { method: string; headers: Record<string, string>; body: string }]
+    const [url, init] = vi.mocked(deps.post).mock.calls[0] as unknown as [string, { method: string; headers: Record<string, string>; body: string }]
     expect(url).toBe('https://hooks.example/abc')
     expect(init.method).toBe('POST')
     expect(init.headers['Content-Type']).toBe('application/json')

@@ -107,6 +107,7 @@ FINAL RESPONSE:
       "Write",
       "Bash(npx cucumber-js:*)",
       "Bash(npx playwright:*)",
+      "Bash(npm run test:bdd)",
     ],
     maxTurns: 8,
   },
@@ -187,7 +188,9 @@ function summarizeAgentTranscript(stdout: string): string {
       num_turns?: number;
       total_cost_usd?: number;
       is_error?: boolean;
-      message?: { content?: Array<{ type: string; name?: string; input?: unknown }> };
+      message?: {
+        content?: Array<{ type: string; name?: string; input?: unknown }>;
+      };
     };
     try {
       event = JSON.parse(raw);
@@ -199,7 +202,9 @@ function summarizeAgentTranscript(stdout: string): string {
     if (event.type === "assistant") {
       for (const block of event.message?.content ?? []) {
         if (block.type === "tool_use") {
-          lines.push(`  🔧 ${block.name} ${JSON.stringify(block.input).slice(0, 160)}`);
+          lines.push(
+            `  🔧 ${block.name} ${JSON.stringify(block.input).slice(0, 160)}`,
+          );
         }
       }
     } else if (event.type === "result") {
@@ -243,7 +248,12 @@ function runAgentCommand(
       maxBuffer: 256 * 1024 * 1024,
     });
   } catch (error: unknown) {
-    const err = error as { status?: number; stdout?: string; stderr?: string; message?: string };
+    const err = error as {
+      status?: number;
+      stdout?: string;
+      stderr?: string;
+      message?: string;
+    };
     code = err.status ?? 1;
     stdout = err.stdout ?? "";
     stderr = err.stderr ?? err.message ?? "";
@@ -395,7 +405,9 @@ function executeStageWithRetry(
     const agentCode = agentRun.code;
     const agentDuration = ((Date.now() - agentStart) / 1000).toFixed(2);
 
-    console.log(`\n📝 ${agent.role} transcript (full log: ${agentRun.logPath}):`);
+    console.log(
+      `\n📝 ${agent.role} transcript (full log: ${agentRun.logPath}):`,
+    );
     console.log(agentRun.summary || "  (no output)");
 
     const estimatedOutputTokens = agent.maxTurns * 150;
@@ -460,14 +472,122 @@ function executeStageWithRetry(
   return false;
 }
 
+interface StageDefinition {
+  agentKey: keyof typeof AGENT_DEFINITIONS;
+  gateName: string;
+  gateCommand: (specPath: string) => string;
+  commitMessage: string;
+  /** Runs before the agent is spawned; returns additional prompt context. */
+  prepare?: () => string;
+}
+
+function buildCleanerContext(): string {
+  // Generate the report from the current code, before Cleaner is spawned.
+  const cleanerBaseline = generateCleanerBaseline();
+
+  return `
+BASELINE CRAP4TS REPORT
+
+The following JSON is the original CRAP analysis generated after the Coder stage
+and before any Cleaner modifications.
+
+Baseline file: ${CLEANER_BASELINE_PATH}
+Latest report file: ${CRAP_REPORT_PATH}
+
+Treat the baseline file and the JSON below as immutable reference data. Do not
+overwrite the baseline. Run npm run test:crap to regenerate the latest report.
+Compare each subsequent report against this baseline.
+
+\`\`\`json
+${cleanerBaseline}
+\`\`\`
+`;
+}
+
+const PIPELINE: StageDefinition[] = [
+  {
+    agentKey: "coder",
+    gateName: "TypeCheck & Vitest Unit Tests",
+    // Root tsconfig.json only holds project references ("files": []), so a
+    // plain `tsc --noEmit` checks nothing. `tsc -b` matches `npm run build`.
+    gateCommand: () => "npx tsc -b && npx vitest run",
+    commitMessage: "feat(coder): implement feature and unit tests",
+  },
+  {
+    agentKey: "cleaner",
+    gateName: "CRAP4TS Analysis",
+    gateCommand: () => "npm run test:crap",
+    commitMessage: "refactor(clean): optimize complexity",
+    prepare: buildCleanerContext,
+  },
+  {
+    agentKey: "hardener",
+    gateName: "Stryker Mutation Testing",
+    gateCommand: () => "npx stryker run",
+    commitMessage: "test(hardener): pass mutation score thresholds",
+  },
+  {
+    agentKey: "qa",
+    gateName: "BDD Acceptance Tests",
+    gateCommand: (specPath) => `npx cucumber-js "${specPath}"`,
+    commitMessage: "test(qa): pass BDD acceptance scenarios",
+  },
+];
+
+/**
+ * Parses `--stage a,b` (or `--stage=a,b`) into pipeline stages, preserving
+ * pipeline order. Returns the full pipeline when the flag is absent.
+ */
+function selectStages(args: string[]): StageDefinition[] {
+  const validKeys = PIPELINE.map((stage) => stage.agentKey);
+  const inline = args.find((arg) => arg.startsWith("--stage="));
+  const flagIndex = args.indexOf("--stage");
+
+  let raw: string | undefined;
+  if (inline) {
+    raw = inline.slice("--stage=".length);
+  } else if (flagIndex !== -1) {
+    raw = args[flagIndex + 1];
+  } else {
+    return PIPELINE;
+  }
+
+  const requested = (raw ?? "")
+    .split(",")
+    .map((name) => name.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (requested.length === 0) {
+    console.error(
+      `✗ Error: --stage requires one or more of: ${validKeys.join(", ")}`,
+    );
+    process.exit(1);
+  }
+
+  const unknown = requested.filter((name) => !validKeys.includes(name));
+  if (unknown.length > 0) {
+    console.error(
+      `✗ Error: Unknown stage(s): ${unknown.join(", ")}. Valid stages: ${validKeys.join(", ")}`,
+    );
+    process.exit(1);
+  }
+
+  return PIPELINE.filter((stage) => requested.includes(stage.agentKey));
+}
+
 function main(): void {
   const args = process.argv.slice(2);
   const specIndex = args.indexOf("--spec");
 
   if (specIndex === -1 || !args[specIndex + 1]) {
-    console.error("✗ Error: Provide a spec file using --spec <path>");
+    console.error(
+      "✗ Error: Provide a spec file using --spec <path> [--stage coder,cleaner,hardener,qa] [--no-commit]",
+    );
     process.exit(1);
   }
+
+  const stages = selectStages(args);
+  const shouldCommit = !args.includes("--no-commit");
 
   const specPath = path.resolve(args[specIndex + 1]);
 
@@ -488,109 +608,50 @@ function main(): void {
   }
 
   try {
+    const stageNames = stages.map((stage) => stage.agentKey).join(" → ");
     console.log(
-      "\n--- Starting Optimized Isolated Agent Gauntlet Pipeline ---",
+      `\n--- Starting Optimized Isolated Agent Gauntlet Pipeline (${stageNames}) ---`,
     );
-
-    // STAGE 1: CODER
-    if (
-      !executeStageWithRetry(
-        "coder",
-        specPath,
-        "TypeCheck & Vitest Unit Tests",
-        "npx tsc --noEmit && npx vitest run",
-      )
-    ) {
-      process.exit(1);
+    if (!shouldCommit) {
+      console.log("ℹ️ --no-commit: stage results will be left uncommitted.");
     }
 
-    runCommand(
-      `git add . && git commit -m "feat(coder): implement feature and unit tests"`,
-    );
+    for (const stage of stages) {
+      const additionalContext = stage.prepare?.();
 
-    // STAGE 2: CLEANER
-    // Generate the report after Coder finishes, before Cleaner is spawned.
-    const cleanerBaseline = generateCleanerBaseline();
+      if (
+        !executeStageWithRetry(
+          stage.agentKey,
+          specPath,
+          stage.gateName,
+          stage.gateCommand(specPath),
+          undefined,
+          additionalContext,
+        )
+      ) {
+        process.exit(1);
+      }
 
-    const cleanerContext = `
-BASELINE CRAP4TS REPORT
-
-The following JSON is the original CRAP analysis generated after the Coder stage
-and before any Cleaner modifications.
-
-Baseline file: ${CLEANER_BASELINE_PATH}
-Latest report file: ${CRAP_REPORT_PATH}
-
-Treat the baseline file and the JSON below as immutable reference data. Do not
-overwrite the baseline. Run npm run test:crap to regenerate the latest report.
-Compare each subsequent report against this baseline.
-
-\`\`\`json
-${cleanerBaseline}
-\`\`\`
-`;
-
-    if (
-      !executeStageWithRetry(
-        "cleaner",
-        specPath,
-        "CRAP4TS Analysis",
-        "npm run test:crap",
-        undefined,
-        cleanerContext,
-      )
-    ) {
-      process.exit(1);
+      if (shouldCommit) {
+        runCommand(`git add . && git commit -m "${stage.commitMessage}"`);
+      }
     }
-
-    runCommand(
-      `git add . && git commit -m "refactor(clean): optimize complexity"`,
-    );
-
-    // STAGE 3: HARDENER
-    if (
-      !executeStageWithRetry(
-        "hardener",
-        specPath,
-        "Stryker Mutation Testing",
-        "npx stryker run",
-      )
-    ) {
-      process.exit(1);
-    }
-
-    runCommand(
-      `git add . && git commit -m "test(hardener): pass mutation score thresholds"`,
-    );
-
-    // STAGE 4: QA
-    if (
-      !executeStageWithRetry(
-        "qa",
-        specPath,
-        "BDD Acceptance Tests",
-        `npx cucumber-js "${specPath}"`,
-      )
-    ) {
-      process.exit(1);
-    }
-
-    runCommand(
-      `git add . && git commit -m "test(qa): pass BDD acceptance scenarios"`,
-    );
 
     console.log("\n-> Running final Vite production build check...");
     const buildRes = runCommand("npm run build");
 
     if (buildRes.code !== 0) {
       console.error(
-        `❌ Final Vite production build failed:\n${buildRes.stderr}`,
+        // tsc reports type errors on stdout, so print both streams.
+        `❌ Final Vite production build failed:\n${[buildRes.stderr, buildRes.stdout].filter(Boolean).join("\n")}`,
       );
       process.exit(1);
     }
 
     console.log(
-      "\n🎉 Deterministic agent gauntlet completed successfully! Ready for Vercel.",
+      stages.length === PIPELINE.length
+        ? "\n🎉 Deterministic agent gauntlet completed successfully! Ready for Vercel."
+        : `\n🎉 Selected stage(s) completed successfully: ${stageNames}`,
     );
   } finally {
     if (computeFileHash(specPath) !== initialHash) {
