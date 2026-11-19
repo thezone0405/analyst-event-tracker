@@ -1,10 +1,24 @@
 import { useMemo, useState } from 'react'
-import { prioritize, todayIso } from '../services/attention'
+import { prioritize, todayIso, type PrioritizedEvent } from '../services/attention'
 import { reconcile } from '../services/reconcile'
 import { computeKpis } from '../services/kpis'
 import type { EventRecord, Registration } from '../types'
 import { EventCard } from './EventCard'
 import { KpiCards } from './KpiCards'
+
+type TabName = 'All Events' | 'Needs Attention' | 'Live CSV Tracked' | 'Completed'
+
+interface Tab {
+  name: TabName
+  matches: (item: PrioritizedEvent) => boolean
+}
+
+const TABS: readonly Tab[] = [
+  { name: 'All Events', matches: () => true },
+  { name: 'Needs Attention', matches: (item) => item.attention.needsAttention },
+  { name: 'Live CSV Tracked', matches: (item) => item.summary.source === 'live' },
+  { name: 'Completed', matches: (item) => item.attention.badge === 'Completed' },
+]
 
 export interface DashboardProps {
   events: EventRecord[]
@@ -22,7 +36,10 @@ export function Dashboard({ events, registrations, today = todayIso() }: Dashboa
   )
 
   const prioritized = useMemo(() => prioritize(result.summaries, today), [result.summaries, today])
-  const urgent = prioritized.filter((item) => item.attention.needsAttention)
+  const [activeTab, setActiveTab] = useState<TabName>('All Events')
+  const activeRule = TABS.find((tab) => tab.name === activeTab)?.matches ?? (() => true)
+  const visible = prioritized.filter(activeRule)
+  const urgent =prioritized.filter((item) => item.attention.needsAttention)
   const kpis = useMemo(
     () => computeKpis(prioritized, result.duplicateCount),
     [prioritized, result.duplicateCount],
@@ -30,7 +47,7 @@ export function Dashboard({ events, registrations, today = todayIso() }: Dashboa
 
   return (
     <div className="flex flex-col gap-6">
-      <KpiCards kpis={kpis} />
+      <KpiCards kpis={kpis} duplicatesIncluded={!dedupeActive} />
       <section
         aria-label="Ingestion summary"
         className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4"
@@ -60,7 +77,7 @@ export function Dashboard({ events, registrations, today = todayIso() }: Dashboa
             checked={dedupeActive}
             onChange={(event) => setDedupeActive(event.target.checked)}
           />
-          Filter duplicate submissions
+          Remove duplicate submissions
         </label>
       </section>
 
@@ -82,8 +99,26 @@ export function Dashboard({ events, registrations, today = todayIso() }: Dashboa
         </section>
       )}
 
+      <div role="group" aria-label="Filter events" className="flex flex-wrap gap-2">
+        {TABS.map((tab) => (
+          <button
+            key={tab.name}
+            type="button"
+            aria-pressed={tab.name === activeTab}
+            onClick={() => setActiveTab(tab.name)}
+            className={`rounded-full border px-4 py-1.5 text-sm font-medium ${
+              tab.name === activeTab
+                ? 'border-indigo-600 bg-indigo-600 text-white'
+                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            {tab.name}
+          </button>
+        ))}
+      </div>
+
       <section aria-label="Events" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {prioritized.map(({ summary, attention }) => (
+        {visible.map(({ summary, attention }) => (
           <EventCard key={summary.event.event_id} summary={summary} attention={attention} />
         ))}
       </section>

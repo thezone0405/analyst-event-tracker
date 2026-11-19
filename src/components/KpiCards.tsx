@@ -2,7 +2,11 @@ import type { DashboardKpis } from '../services/kpis'
 
 export interface KpiCardsProps {
   kpis: DashboardKpis
+  /** True when duplicate filtering is off, so raw rows (including duplicates) are counted. */
+  duplicatesIncluded?: boolean
 }
+
+const DUPLICATES_INCLUDED_HINT = 'Duplicates currently included in counts'
 
 interface KpiDefinition {
   key: keyof DashboardKpis
@@ -19,10 +23,12 @@ const KPI_DEFINITIONS: readonly KpiDefinition[] = [
 ]
 
 /** Top-level KPI cards summarising registration health. */
-export function KpiCards({ kpis }: KpiCardsProps) {
+export function KpiCards({ kpis, duplicatesIncluded = false }: KpiCardsProps) {
   return (
     <section aria-label="Key metrics" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {KPI_DEFINITIONS.map(({ key, label, hint, accent }) => (
+      {KPI_DEFINITIONS.map(({ key, label, hint: defaultHint, accent }) => {
+        const hint = key === 'duplicates' && duplicatesIncluded ? DUPLICATES_INCLUDED_HINT : defaultHint
+        return (
         <div
           key={key}
           data-testid={`kpi-${key}`}
@@ -34,7 +40,8 @@ export function KpiCards({ kpis }: KpiCardsProps) {
           </p>
           <p className="text-xs text-slate-500">{hint}</p>
         </div>
-      ))}
+        )
+      })}
     </section>
   )
 }
