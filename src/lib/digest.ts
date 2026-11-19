@@ -35,6 +35,35 @@ export function sydneyToday(now: Date): string {
   }).format(now)
 }
 
+function resolveToday(deps: DigestDeps): string {
+  return deps.env.DIGEST_DATE?.trim() || sydneyToday(deps.now())
+}
+
+function describeError(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
+}
+
+function buildMessage(deps: DigestDeps, today: string): string {
+  const events = parseEvents(JSON.parse(deps.readFile(EVENTS_PATH)))
+  const registrations = parseRegistrations(deps.readFile(REGISTRATIONS_PATH))
+  return buildDigestText(events, registrations, today)
+}
+
+async function deliver(deps: DigestDeps, webhook: string, today: string): Promise<number> {
+  const response = await deps.post(webhook, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: buildMessage(deps, today) }),
+  })
+  if (!response.ok) {
+    const body = await response.text()
+    deps.error(`Slack webhook responded with HTTP ${response.status}: ${body}`)
+    return 1
+  }
+  deps.log(`Morning digest delivered for ${today}.`)
+  return 0
+}
+
 /** Runs the digest and returns the process exit code (0 on success). */
 export async function runDigest(deps: DigestDeps): Promise<number> {
   const webhook = deps.env.SLACK_WEBHOOK?.trim()
@@ -43,24 +72,9 @@ export async function runDigest(deps: DigestDeps): Promise<number> {
     return 1
   }
   try {
-    const today = deps.env.DIGEST_DATE?.trim() || sydneyToday(deps.now())
-    const events = parseEvents(JSON.parse(deps.readFile(EVENTS_PATH)))
-    const registrations = parseRegistrations(deps.readFile(REGISTRATIONS_PATH))
-    const text = buildDigestText(events, registrations, today)
-    const response = await deps.post(webhook, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    })
-    if (!response.ok) {
-      const body = await response.text()
-      deps.error(`Slack webhook responded with HTTP ${response.status}: ${body}`)
-      return 1
-    }
-    deps.log(`Morning digest delivered for ${today}.`)
-    return 0
+    return await deliver(deps, webhook, resolveToday(deps))
   } catch (err) {
-    deps.error(`Morning digest failed: ${err instanceof Error ? err.message : String(err)}`)
+    deps.error(`Morning digest failed: ${describeError(err)}`)
     return 1
   }
 }
