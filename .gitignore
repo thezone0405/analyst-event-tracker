@@ -29,3 +29,6 @@ reports/
 .stryker-tmp/
 .env.*
 .env
+
+# Personal Claude Code permissions (not loaded by harness agents)
+.claude/settings.local.json
