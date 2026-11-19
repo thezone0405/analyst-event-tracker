@@ -1,0 +1,22 @@
+name: Morning Alert
+
+on:
+  schedule:
+    # 21:00 UTC Sun-Thu = 08:00 AEDT Mon-Fri
+    - cron: '0 21 * * 0-4'
+  workflow_dispatch:
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Post morning digest
+        run: npx tsx script/daily-digest.ts
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
