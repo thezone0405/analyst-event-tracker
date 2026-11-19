@@ -5,7 +5,7 @@ Feature: Live background data sync and self-service coordinator controls
 
   Background:
     Given the dashboard is open in a web browser
-    And the initial data has loaded from "public/data/events.json" and "public/data/registrations.csv"
+    And the initial data has loaded from "public/events.json" and "public/registrations.csv"
 
   Scenario: Automatically refresh registration data every 60 seconds without stale caching
     Given the dashboard displays the "Last synced" timestamp in the header
