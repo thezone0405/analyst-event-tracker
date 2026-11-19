@@ -29,14 +29,24 @@ async function fetchText(fetcher: Fetcher, url: string): Promise<string> {
   return response.text()
 }
 
-/** Loads and parses the master schedule and live registration export. */
+/** Appends a cache-busting query parameter so refreshes never hit a stale cached copy. */
+export function withCacheBust(url: string, stamp: number | string): string {
+  return `${url}${url.includes('?') ? '&' : '?'}_=${stamp}`
+}
+
+/**
+ * Loads and parses the master schedule and live registration export.
+ * When `cacheBust` is given, both URLs carry a cache-busting query parameter.
+ */
 export async function loadDashboardData(
   fetcher: Fetcher = defaultFetcher,
   sources: DataSources = DEFAULT_DATA_SOURCES,
+  cacheBust?: number | string,
 ): Promise<DashboardData> {
+  const urlFor = (url: string) => (cacheBust === undefined ? url : withCacheBust(url, cacheBust))
   const [eventsText, registrationsText] = await Promise.all([
-    fetchText(fetcher, sources.eventsUrl),
-    fetchText(fetcher, sources.registrationsUrl),
+    fetchText(fetcher, urlFor(sources.eventsUrl)),
+    fetchText(fetcher, urlFor(sources.registrationsUrl)),
   ])
   return {
     events: parseEvents(JSON.parse(eventsText)),

@@ -36,7 +36,7 @@ describe('Dashboard', () => {
   it('counts every row when duplicate filtering is switched off', () => {
     render(<Dashboard events={events} registrations={registrations} />)
 
-    const toggle = screen.getByRole('checkbox', { name: 'Filter duplicate submissions' })
+    const toggle = screen.getByRole('checkbox', { name: 'Remove duplicate submissions' })
     expect(toggle).toBeChecked()
     fireEvent.click(toggle)
 
