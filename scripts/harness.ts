@@ -2,6 +2,15 @@ import { execSync } from "child_process";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
+import {
+  changedSince,
+  commitPaths,
+  isInScope,
+  listDirtyPaths,
+  restorePaths,
+  runCommand,
+  snapshotWorkspace,
+} from "./workspace.ts";
 
 const MAX_RETRIES = 25;
 
@@ -15,27 +24,73 @@ const CLEANER_BASELINE_PATH = path.resolve(
   "reports/cleaner/baseline-crap-report.json",
 );
 
+/** Rework loops allowed after QA reports a defect or the final build fails. */
+const MAX_REWORK_CYCLES = 3;
+
+/** Where QA writes a defect report to hand an application bug to the Coder. */
+const QA_DEFECT_REPORT = "reports/qa/defect-report.md";
+
 interface AgentConfig {
   role: string;
   systemPrompt: string;
-  allowedTools: string[];
+  /**
+   * Repo-relative globs this agent may create, modify or delete. Enforced twice:
+   * up front as Claude Code `Edit(<glob>)` permission rules (which cover every
+   * file-editing tool), and after each attempt by diffing the working tree —
+   * anything changed outside the scope is reverted and the attempt fails.
+   * Configuration, package files, specs and scripts are in no agent's scope.
+   */
+  writeScope: string[];
+  /** Additional Edit-only paths for git-ignored artifacts (e.g. reports). */
+  artifactScope?: string[];
+  /**
+   * The only shell commands the agent may run: npm scripts from package.json,
+   * which no agent can modify, so the checks cannot be tampered with.
+   */
+  scripts: AgentScript[];
   maxTurns: number;
   model: string;
 }
+
+interface AgentScript {
+  /** npm script name, run as `npm run <name>`. */
+  name: string;
+  /** If set, extra arguments may follow `--`; the text describes them (e.g. a test file). */
+  args?: string;
+  purpose: string;
+}
+
+/**
+ * Built-in Claude Code tools every harness agent gets (passed via `--tools`).
+ * Everything else — web access, subagents, notebooks — is unavailable. What an
+ * agent may edit and run is narrowed further by its permission rules.
+ */
+const AGENT_TOOLS = ["Read", "Glob", "Grep", "Edit", "Write", "Bash"];
+
+/** The stage's verification gate; agents can run it to check their own work. */
+function gateScript(agentKey: string): AgentScript {
+  return {
+    name: `gate:${agentKey}`,
+    purpose: "the exact check the harness runs to judge your work; run it before finishing",
+  };
+}
+
+const UNIT_TESTS: AgentScript = {
+  name: "test:unit",
+  args: "<test file or name filter>",
+  purpose: "run Vitest unit tests (all, or only the given files)",
+};
+const TYPECHECK: AgentScript = { name: "typecheck", purpose: "TypeScript type check (tsc -b)" };
 
 const AGENT_DEFINITIONS: Record<string, AgentConfig> = {
   coder: {
     role: "Coder Agent",
     model: "sonnet",
-    systemPrompt:
-      "You are an isolated code generator. Implement React components in src/, Tailwind styling, and Vitest unit tests for the target spec. Do not modify .feature files.",
-    allowedTools: [
-      "Read",
-      "Edit",
-      "Write",
-      "Bash(npx vitest:*)",
-      "Bash(npx tsc:*)",
-    ],
+    systemPrompt: `You are an isolated code generator. Implement React components in src/, Tailwind styling, and Vitest unit tests for the target spec.
+
+BOUNDARIES: You may only create, modify or delete files under src/. Do not modify specs (.feature files), tests/, scripts/, configuration files (vite, vitest, tsconfig, eslint, stryker, cucumber, .claude) or package files. Changes outside src/ are automatically reverted and fail your attempt.`,
+    writeScope: ["src/**"],
+    scripts: [TYPECHECK, UNIT_TESTS, gateScript("coder")],
     maxTurns: 15,
   },
   cleaner: {
@@ -60,6 +115,10 @@ OBJECTIVES:
 6. Do not remove tests, weaken assertions, or modify tests solely to make the
    CRAP score pass.
 7. Do not modify coverage configuration or CRAP thresholds.
+8. You may only create, modify or delete files under src/. Configuration files,
+   package files, specs, tests/ and scripts/ are off-limits; changes there are
+   automatically reverted and fail your attempt.
+9. Keep \`npm run typecheck\` and the unit tests passing.
 
 WORKFLOW:
 1. Read and analyze the baseline CRAP report provided in the prompt.
@@ -79,39 +138,92 @@ FINAL RESPONSE:
 - Remaining functions above threshold.
 - Any behavior or architectural concerns.
 `,
-    allowedTools: ["Read", "Edit", "Write", "Bash(npm run test:crap)"],
+    writeScope: ["src/**"],
+    scripts: [
+      TYPECHECK,
+      UNIT_TESTS,
+      {
+        name: "test:crap",
+        purpose: "coverage + CRAP analysis; writes reports/crap-report.json",
+      },
+      gateScript("cleaner"),
+    ],
     maxTurns: 25,
   },
   hardener: {
     role: "Hardener Agent",
     model: "sonnet",
-    systemPrompt:
-      "You are a mutation testing expert. Analyze Stryker mutation test reports and write boundary unit test assertions to kill surviving mutants.",
-    allowedTools: [
-      "Read",
-      "Edit",
-      "Write",
-      "Bash(npx vitest:*)",
-      "Bash(npx stryker:*)",
+    systemPrompt: `You are a mutation testing expert. Analyze Stryker mutation test reports and write boundary unit test assertions to kill surviving mutants.
+
+BOUNDARIES: You may only create or modify unit test files (src/**/*.test.ts, src/**/*.test.tsx) and shared test helpers in src/test/. Do not change application code, configuration (including stryker.config.json and its thresholds), package files, specs, tests/ or scripts/. Changes outside your scope are automatically reverted and fail your attempt. Keep \`npm run typecheck\` passing.
+
+Mutation testing is slow: use \`npm run test:mutation -- --mutate <file>\` to focus on one source file while iterating. The surviving mutants of the last run are in reports/mutation/mutation.json.`,
+    writeScope: ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test/**"],
+    scripts: [
+      TYPECHECK,
+      UNIT_TESTS,
+      {
+        name: "test:mutation",
+        args: "--mutate <source file>",
+        purpose: "Stryker mutation testing (all of src/services, or only the given file)",
+      },
+      gateScript("hardener"),
     ],
     maxTurns: 12,
   },
   qa: {
     role: "QA Acceptance Agent",
     model: "sonnet",
-    systemPrompt:
-      "You are a QA verification agent. Execute BDD acceptance tests against the implementation to verify full adherence to the Gherkin specification.",
-    allowedTools: [
-      "Read",
-      "Edit",
-      "Write",
-      "Bash(npx cucumber-js:*)",
-      "Bash(npx playwright:*)",
-      "Bash(npm run test:bdd)",
+    systemPrompt: `You are a QA verification agent. Prove the application satisfies the target Gherkin specification, and act as a regression check for EVERY specification in specs/features/.
+
+BOUNDARIES: You may only create or modify files under tests/ (step definitions and support code), plus the defect report at ${QA_DEFECT_REPORT}. You must NOT modify application code (src/), specs, configuration or package files. Changes outside your scope are automatically reverted and fail your attempt.
+
+WORKFLOW:
+1. Write or update step definitions in tests/step-definitions/ for the target spec.
+2. Run the FULL acceptance suite: npm run test:bdd (all specs, not only the target).
+3. If a scenario fails because a step definition is missing or wrong, fix the step definition. Never weaken an assertion just to make a scenario pass.
+4. If a scenario fails because the application behaves differently from its spec (a defect in src/), do NOT work around it. Write ${QA_DEFECT_REPORT} listing, for each defect: the feature file and scenario, the failing step, expected vs. actual behavior, and the source file(s) you suspect. Then stop. The harness hands the report to the Coder agent and re-runs the pipeline.`,
+    writeScope: ["tests/**"],
+    artifactScope: ["reports/qa/**"],
+    scripts: [
+      {
+        name: "test:bdd",
+        args: '--name "<scenario name regex>"',
+        purpose: "Cucumber + Playwright acceptance suite for all specs (or only matching scenarios)",
+      },
+      gateScript("qa"),
     ],
     maxTurns: 8,
   },
 };
+
+/**
+ * Claude Code permission rules for an agent: read/search anywhere, edit only in
+ * scope, and run only its own npm scripts.
+ */
+function allowedToolsFor(agent: AgentConfig): string[] {
+  const editable = [...agent.writeScope, ...(agent.artifactScope ?? [])];
+  const commands = agent.scripts.flatMap((script) => [
+    `Bash(npm run ${script.name})`,
+    ...(script.args ? [`Bash(npm run ${script.name} -- *)`] : []),
+  ]);
+  // `Edit(path)` rules cover Write too; a `Write(path)` rule is ignored by Claude Code.
+  return ["Read", "Glob", "Grep", ...editable.map((glob) => `Edit(${glob})`), ...commands];
+}
+
+/** Prompt section telling the agent exactly which commands it has. */
+function describeScripts(agent: AgentConfig): string {
+  const lines = agent.scripts.map((script) => {
+    const usage = script.args
+      ? `npm run ${script.name} [-- ${script.args}]`
+      : `npm run ${script.name}`;
+    return `- \`${usage}\`: ${script.purpose}`;
+  });
+  return [
+    "COMMANDS YOU CAN RUN (no other shell commands are permitted):",
+    ...lines,
+  ].join("\n");
+}
 
 function computeFileHash(filePath: string): string {
   return crypto
@@ -130,38 +242,6 @@ function purgeWorkspaceCache(): void {
     if (fs.existsSync(fullPath)) {
       fs.rmSync(fullPath, { recursive: true, force: true });
     }
-  }
-}
-
-function runCommand(command: string): {
-  code: number;
-  stdout: string;
-  stderr: string;
-} {
-  const cleanEnv = { ...process.env };
-  delete cleanEnv.CLAUDECODE;
-
-  try {
-    const stdout = execSync(command, {
-      encoding: "utf8",
-      stdio: ["pipe", "pipe", "pipe"],
-      env: cleanEnv,
-    });
-
-    return { code: 0, stdout, stderr: "" };
-  } catch (error: unknown) {
-    const err = error as {
-      status?: number;
-      stdout?: string;
-      stderr?: string;
-      message?: string;
-    };
-
-    return {
-      code: err.status ?? 1,
-      stdout: err.stdout ?? "",
-      stderr: err.stderr ?? err.message ?? "",
-    };
   }
 }
 
@@ -332,19 +412,31 @@ function readLatestCrapReport(): string {
   return fs.readFileSync(CRAP_REPORT_PATH, "utf8");
 }
 
+function tail(text: string, max: number): string {
+  return text.length > max ? `…(truncated)\n${text.slice(-max)}` : text;
+}
+
+type StageResult =
+  | { outcome: "passed" }
+  | { outcome: "failed" }
+  /** The agent filed a defect report that belongs to another agent (QA → Coder). */
+  | { outcome: "handoff"; report: string };
+
 function executeStageWithRetry(
-  agentKey: keyof typeof AGENT_DEFINITIONS,
+  stage: StageDefinition,
   specPath: string,
-  gateName: string,
-  gateCommand: string,
-  preGateCommand?: string,
+  cycle: number,
   additionalContext?: string,
-): boolean {
+): StageResult {
+  const { agentKey, gateName, handoffReportPath } = stage;
+  const gateCommand = stage.gateCommand(specPath);
   const agent = AGENT_DEFINITIONS[agentKey];
   let lastErrorDetails = "";
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     purgeWorkspaceCache();
+    // A defect report must come from this attempt, never from an earlier one.
+    if (handoffReportPath) fs.rmSync(handoffReportPath, { force: true });
 
     const startTime = new Date().toISOString();
     console.log("\n==================================================");
@@ -355,7 +447,7 @@ function executeStageWithRetry(
 
     // Construct the prompt from the agent instructions and Gherkin specification.
     const specContent = fs.readFileSync(specPath, "utf8");
-    let fullPrompt = `${agent.systemPrompt}\n\nSPECIFICATION (${path.basename(specPath)}):\n\`\`\`gherkin\n${specContent}\n\`\`\``;
+    let fullPrompt = `${agent.systemPrompt}\n\n${describeScripts(agent)}\n\nSPECIFICATION (${path.basename(specPath)}):\n\`\`\`gherkin\n${specContent}\n\`\`\``;
 
     if (additionalContext) {
       fullPrompt += `\n\nADDITIONAL CONTEXT:\n${additionalContext}\n`;
@@ -373,7 +465,7 @@ function executeStageWithRetry(
       `📊 [Token Telemetry] Estimated Input Prompt: ~${estimatedInputTokens} tokens (${fullPrompt.length} chars)`,
     );
 
-    const allowedToolsArgs = agent.allowedTools
+    const allowedToolsArgs = allowedToolsFor(agent)
       .map((tool) => `"${tool}"`)
       .join(" ");
 
@@ -389,17 +481,25 @@ function executeStageWithRetry(
       "--verbose",
       "--permission-mode",
       "dontAsk",
+      // Project settings only: keeps the spec-protection and Stop hooks, but
+      // no personal (user/local) allow rules can widen this agent's permissions.
+      "--setting-sources",
+      "project",
+      "--tools",
+      AGENT_TOOLS.join(","),
       "--allowedTools",
       allowedToolsArgs,
       "--max-turns",
       agent.maxTurns.toString(),
     ].join(" ");
 
-    const logPath = path.resolve(
-      process.cwd(),
-      `reports/agents/${agentKey}-attempt-${attempt}.jsonl`,
-    );
+    const logName =
+      cycle > 0
+        ? `${agentKey}-rework-${cycle}-attempt-${attempt}`
+        : `${agentKey}-attempt-${attempt}`;
+    const logPath = path.resolve(process.cwd(), `reports/agents/${logName}.jsonl`);
 
+    const attemptSnapshot = snapshotWorkspace();
     const agentStart = Date.now();
     const agentRun = runAgentCommand(cmd, fullPrompt, logPath);
     const agentCode = agentRun.code;
@@ -415,25 +515,29 @@ function executeStageWithRetry(
       `📊 [Token Telemetry] Session Summary: Duration: ${agentDuration}s | Max Turn Budget: ${agent.maxTurns} | Est. Total Session Tokens: ~${estimatedInputTokens + estimatedOutputTokens}`,
     );
 
+    // Boundary enforcement: undo anything the agent changed outside its scope.
+    const outOfScope = changedSince(attemptSnapshot).filter(
+      (p) => !isInScope(p, agent.writeScope),
+    );
+    if (outOfScope.length > 0) {
+      restorePaths(outOfScope, attemptSnapshot);
+      lastErrorDetails = [
+        "BOUNDARY VIOLATION: you changed files outside your responsibility.",
+        `Your allowed paths are: ${agent.writeScope.join(", ")}`,
+        "These changes were reverted:",
+        ...outOfScope.map((p) => `- ${p}`),
+        "Only modify files within your allowed paths.",
+      ].join("\n");
+      console.error(`\n🚧 ${agent.role} went out of bounds:\n${lastErrorDetails}`);
+      continue;
+    }
+
     if (agentCode !== 0) {
       console.log(
         `\n⚠️ [${new Date().toISOString()}] ${agent.role} finished with non-zero exit code ${agentCode}.`,
       );
       lastErrorDetails = `Agent process exited with code ${agentCode} (reached max turns or unhandled exception).\n${agentRun.summary.slice(-4000)}`;
       continue;
-    }
-
-    if (preGateCommand) {
-      console.log(`\n⚙️ Running pre-gate command: ${preGateCommand}`);
-      const preStart = Date.now();
-      const preRes = runCommand(preGateCommand);
-      const preDuration = ((Date.now() - preStart) / 1000).toFixed(2);
-
-      if (preRes.code !== 0) {
-        lastErrorDetails = preRes.stderr || preRes.stdout;
-        console.error(`❌ Pre-gate failed in ${preDuration}s.`);
-        continue;
-      }
     }
 
     console.log(`\n🛡️ Running verification gate: ${gateName} (${gateCommand})`);
@@ -445,7 +549,21 @@ function executeStageWithRetry(
       console.log(
         `\n🎉 [${new Date().toISOString()}] Verification Gate "${gateName}" PASSED in ${gateDuration}s.`,
       );
-      return true;
+      return { outcome: "passed" };
+    }
+
+    if (handoffReportPath && fs.existsSync(handoffReportPath)) {
+      console.log(
+        `\n📨 ${agent.role} filed a defect report (${handoffReportPath}); handing off to the Coder agent.`,
+      );
+      return {
+        outcome: "handoff",
+        report: [
+          fs.readFileSync(handoffReportPath, "utf8"),
+          `FAILING GATE OUTPUT (${gateName}, tail):`,
+          tail([gateRes.stderr, gateRes.stdout].filter(Boolean).join("\n"), 8000),
+        ].join("\n\n"),
+      };
     }
 
     lastErrorDetails = [
@@ -469,7 +587,7 @@ function executeStageWithRetry(
   console.error(
     `\n❌ Fatal: Stage "${agent.role}" failed after maximum ${MAX_RETRIES} retries.`,
   );
-  return false;
+  return { outcome: "failed" };
 }
 
 interface StageDefinition {
@@ -479,6 +597,11 @@ interface StageDefinition {
   commitMessage: string;
   /** Runs before the agent is spawned; returns additional prompt context. */
   prepare?: () => string;
+  /**
+   * If the gate fails and the agent wrote this file, the stage hands the report
+   * to the Coder and the pipeline re-runs from the Coder stage.
+   */
+  handoffReportPath?: string;
 }
 
 function buildCleanerContext(): string {
@@ -507,30 +630,32 @@ ${cleanerBaseline}
 const PIPELINE: StageDefinition[] = [
   {
     agentKey: "coder",
-    gateName: "TypeCheck & Vitest Unit Tests",
-    // Root tsconfig.json only holds project references ("files": []), so a
-    // plain `tsc --noEmit` checks nothing. `tsc -b` matches `npm run build`.
-    gateCommand: () => "npx tsc -b && npx vitest run",
+    gateName: "TypeCheck, Unit Tests & Production Build",
+    // Gates are npm scripts in package.json (gate:<agent>), which no agent may
+    // edit; agents are allowed to run the same script to check their own work.
+    gateCommand: () => "npm run gate:coder",
     commitMessage: "feat(coder): implement feature and unit tests",
   },
   {
     agentKey: "cleaner",
-    gateName: "CRAP4TS Analysis",
-    gateCommand: () => "npm run test:crap",
+    gateName: "TypeCheck & CRAP4TS Analysis",
+    gateCommand: () => "npm run gate:cleaner",
     commitMessage: "refactor(clean): optimize complexity",
     prepare: buildCleanerContext,
   },
   {
     agentKey: "hardener",
-    gateName: "Stryker Mutation Testing",
-    gateCommand: () => "npx stryker run",
+    gateName: "TypeCheck & Stryker Mutation Testing",
+    gateCommand: () => "npm run gate:hardener",
     commitMessage: "test(hardener): pass mutation score thresholds",
   },
   {
     agentKey: "qa",
-    gateName: "BDD Acceptance Tests",
-    gateCommand: (specPath) => `npx cucumber-js "${specPath}"`,
+    gateName: "BDD Acceptance & Regression Suite (all specs)",
+    // Every spec, not only the target: a change for one spec must not break another.
+    gateCommand: () => "npm run gate:qa",
     commitMessage: "test(qa): pass BDD acceptance scenarios",
+    handoffReportPath: QA_DEFECT_REPORT,
   },
 ];
 
@@ -575,7 +700,119 @@ function selectStages(args: string[]): StageDefinition[] {
   return PIPELINE.filter((stage) => requested.includes(stage.agentKey));
 }
 
-function main(): void {
+type PassOutcome =
+  | { kind: "completed" }
+  | { kind: "failed" }
+  | { kind: "rework"; context: string };
+
+function reworkContext(cycle: number, source: string, details: string): string {
+  return `
+REWORK REQUEST (cycle ${cycle} of ${MAX_REWORK_CYCLES}), raised by: ${source}
+
+A later stage of the pipeline found a problem that must be fixed in the
+application code under src/. It may relate to any spec in specs/features/, not
+only the one above; read the relevant spec there. Fix the root cause in src/ and
+keep or extend the unit tests. Your changes will then be re-checked by the
+Cleaner, Hardener and QA stages.
+
+${details}
+`;
+}
+
+/** Runs `stages` once, committing each stage's own changes as it passes. */
+function runPass(
+  stages: StageDefinition[],
+  specPath: string,
+  shouldCommit: boolean,
+  cycle: number,
+  rework?: string,
+): PassOutcome {
+  const suffix = cycle > 0 ? ` (rework cycle ${cycle})` : "";
+
+  for (const stage of stages) {
+    const stageSnapshot = snapshotWorkspace();
+    const context =
+      [stage.prepare?.(), stage.agentKey === "coder" ? rework : undefined]
+        .filter(Boolean)
+        .join("\n\n") || undefined;
+
+    const result = executeStageWithRetry(stage, specPath, cycle, context);
+    if (result.outcome === "failed") return { kind: "failed" };
+
+    if (shouldCommit) {
+      const message =
+        result.outcome === "handoff"
+          ? "test(qa): hand off defect report to coder"
+          : stage.commitMessage;
+      commitPaths(changedSince(stageSnapshot), message + suffix);
+    }
+
+    if (result.outcome === "handoff") {
+      return {
+        kind: "rework",
+        context: reworkContext(
+          cycle + 1,
+          "QA acceptance/regression tests",
+          `QA DEFECT REPORT:\n\`\`\`\n${result.report}\n\`\`\``,
+        ),
+      };
+    }
+  }
+  return { kind: "completed" };
+}
+
+/**
+ * Runs the selected stages, then the production build. A QA defect report or a
+ * failed build sends the work back to the Coder, after which the FULL pipeline
+ * (Coder → Cleaner → Hardener → QA → build) runs again, so every Coder change is
+ * re-checked by every downstream stage. Gives up after MAX_REWORK_CYCLES.
+ */
+function runPipeline(
+  selected: StageDefinition[],
+  specPath: string,
+  shouldCommit: boolean,
+): boolean {
+  let stages = selected;
+  let rework: string | undefined;
+
+  for (let cycle = 0; cycle <= MAX_REWORK_CYCLES; cycle++) {
+    if (cycle > 0) {
+      stages = PIPELINE;
+      console.log("\n##################################################");
+      console.log(
+        `🔁 Rework cycle ${cycle}/${MAX_REWORK_CYCLES}: Coder → Cleaner → Hardener → QA → build`,
+      );
+      console.log("##################################################");
+    }
+
+    const pass = runPass(stages, specPath, shouldCommit, cycle, rework);
+    if (pass.kind === "failed") return false;
+    if (pass.kind === "rework") {
+      rework = pass.context;
+      continue;
+    }
+
+    console.log("\n-> Running final Vite production build check...");
+    const build = runCommand("npm run gate:final");
+    if (build.code === 0) return true;
+
+    // tsc reports type errors on stdout, so include both streams.
+    const output = [build.stderr, build.stdout].filter(Boolean).join("\n");
+    console.error(`❌ Final Vite production build failed:\n${output}`);
+    rework = reworkContext(
+      cycle + 1,
+      "final production build (npm run build)",
+      `BUILD OUTPUT:\n\`\`\`\n${tail(output, 8000)}\n\`\`\``,
+    );
+  }
+
+  console.error(
+    `\n❌ Fatal: pipeline still failing after ${MAX_REWORK_CYCLES} rework cycle(s).`,
+  );
+  return false;
+}
+
+function main(): number {
   const args = process.argv.slice(2);
   const specIndex = args.indexOf("--spec");
 
@@ -599,14 +836,16 @@ function main(): void {
   console.log(`✓ Loading spec: ${path.basename(specPath)}`);
   const initialHash = computeFileHash(specPath);
 
-  runCommand(`git add "${specPath}"`);
-  if (runCommand("git diff --cached --quiet").code !== 0) {
-    runCommand(
-      `git commit -m "docs(spec): lock human-authored baseline for ${path.basename(specPath)}"`,
+  // Commit only the spec, never anything else that happens to be staged.
+  const specRelPath = path.relative(process.cwd(), specPath).split(path.sep).join("/");
+  if (listDirtyPaths().includes(specRelPath)) {
+    commitPaths(
+      [specRelPath],
+      `docs(spec): lock human-authored baseline for ${path.basename(specPath)}`,
     );
-    console.log("✓ Committed spec baseline.");
   }
 
+  let succeeded = false;
   try {
     const stageNames = stages.map((stage) => stage.agentKey).join(" → ");
     console.log(
@@ -616,54 +855,27 @@ function main(): void {
       console.log("ℹ️ --no-commit: stage results will be left uncommitted.");
     }
 
-    for (const stage of stages) {
-      const additionalContext = stage.prepare?.();
+    succeeded = runPipeline(stages, specPath, shouldCommit);
 
-      if (
-        !executeStageWithRetry(
-          stage.agentKey,
-          specPath,
-          stage.gateName,
-          stage.gateCommand(specPath),
-          undefined,
-          additionalContext,
-        )
-      ) {
-        process.exit(1);
-      }
-
-      if (shouldCommit) {
-        runCommand(`git add . && git commit -m "${stage.commitMessage}"`);
-      }
-    }
-
-    console.log("\n-> Running final Vite production build check...");
-    const buildRes = runCommand("npm run build");
-
-    if (buildRes.code !== 0) {
-      console.error(
-        // tsc reports type errors on stdout, so print both streams.
-        `❌ Final Vite production build failed:\n${[buildRes.stderr, buildRes.stdout].filter(Boolean).join("\n")}`,
+    if (succeeded) {
+      console.log(
+        "\n🎉 Deterministic agent gauntlet completed successfully! Ready for Vercel.",
       );
-      process.exit(1);
     }
-
-    console.log(
-      stages.length === PIPELINE.length
-        ? "\n🎉 Deterministic agent gauntlet completed successfully! Ready for Vercel."
-        : `\n🎉 Selected stage(s) completed successfully: ${stageNames}`,
-    );
   } finally {
+    // Runs on success, failure and exceptions alike (no process.exit in the try).
     if (computeFileHash(specPath) !== initialHash) {
       console.error(
         "\n🚨 SECURITY ERROR: Spec file was modified! Reverting...",
       );
-      runCommand(`git checkout "${specPath}"`);
-      process.exit(1);
+      runCommand(`git checkout HEAD -- "${specPath}"`);
+      succeeded = false;
+    } else {
+      console.log("✓ Spec integrity verified.");
     }
-
-    console.log("✓ Spec integrity verified.");
   }
+
+  return succeeded ? 0 : 1;
 }
 
-main();
+process.exit(main());

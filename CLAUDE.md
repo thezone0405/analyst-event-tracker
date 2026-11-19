@@ -20,4 +20,5 @@
 
 1. **Spec Integrity:** Never modify files under `specs/features/`. They are the human source of truth.
 2. **Component Architecture:** Build modular, functional React components with explicit TypeScript props interfaces. Avoid inline styles; use Tailwind utility classes.
-3. **Build & Type Safety:** Code must compile cleanly with `npx tsc --noEmit` and pass Vite production builds (`npx vite build`) without warnings or errors.
+3. **Build & Type Safety:** Code must compile cleanly with `npx tsc -b` and pass Vite production builds (`npx vite build`) without warnings or errors. (The root `tsconfig.json` only holds project references, so `tsc --noEmit` checks nothing.)
+4. **Stay Within Your Responsibility:** Each harness agent may only change files in its own scope (Coder/Cleaner: `src/`; Hardener: unit test files; QA: `tests/`). Configuration, package files, specs and scripts are off-limits to every agent; out-of-scope changes are reverted automatically.
